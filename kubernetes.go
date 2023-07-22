@@ -25,13 +25,10 @@ func Readyz(isReady *atomic.Value) http.HandlerFunc {
 	}
 }
 
-func RegisterService(prefix string, instance string) (*sdetcd.Registrar, error) {
-	var (
-		etcdServer = os.Getenv("ETCD_ADDR")
-		key        = prefix + instance
-	)
+func RegisterService(servers []string, prefix string, instance string) (*sdetcd.Registrar, error) {
+	key := prefix + instance
 
-	client, err := sdetcd.NewClient(context.Background(), []string{etcdServer}, sdetcd.ClientOptions{})
+	client, err := sdetcd.NewClient(context.Background(), servers, sdetcd.ClientOptions{})
 	if err != nil {
 		return nil, err
 	}
