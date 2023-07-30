@@ -2,6 +2,7 @@ package goutils
 
 import (
 	"context"
+	"encoding/json"
 	kl "github.com/go-kit/kit/log"
 	sdetcd "github.com/go-kit/kit/sd/etcdv3"
 	"github.com/joho/godotenv"
@@ -68,4 +69,8 @@ func InitApp(dsn string) (*gorm.DB, error) {
 	}
 
 	return gorm.Open(postgres.Open(dsn), &gorm.Config{})
+}
+
+func EncodeResponse(_ context.Context, w http.ResponseWriter, response interface{}) error {
+	return json.NewEncoder(w).Encode(response)
 }
