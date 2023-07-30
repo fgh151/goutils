@@ -4,6 +4,10 @@ import (
 	"context"
 	kl "github.com/go-kit/kit/log"
 	sdetcd "github.com/go-kit/kit/sd/etcdv3"
+	"github.com/joho/godotenv"
+	"gorm.io/driver/postgres"
+	"gorm.io/gorm"
+	"log"
 	"net/http"
 	"os"
 	"sync/atomic"
@@ -51,4 +55,17 @@ func GetLogger() kl.Logger {
 	logger = kl.With(logger, "caller", kl.DefaultCaller)
 
 	return logger
+}
+
+func InitApp(dsn string) (*gorm.DB, error) {
+	_, isCuber := os.LookupEnv("IS_CUBER")
+
+	if false == isCuber {
+		err := godotenv.Load()
+		if err != nil {
+			log.Fatal("Error loading .env file")
+		}
+	}
+
+	return gorm.Open(postgres.Open(dsn), &gorm.Config{})
 }
