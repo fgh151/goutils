@@ -3,11 +3,13 @@ package goutils
 import (
 	"context"
 	"encoding/json"
+	"github.com/gin-gonic/gin"
 	kl "github.com/go-kit/kit/log"
 	sdetcd "github.com/go-kit/kit/sd/etcdv3"
 	"github.com/joho/godotenv"
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
+	"gorm.io/plugin/prometheus"
 	"log"
 	"net/http"
 	"os"
@@ -17,6 +19,19 @@ import (
 // healthz is a liveness probe.
 func Healthz(w http.ResponseWriter, _ *http.Request) {
 	w.WriteHeader(http.StatusOK)
+}
+
+func HealthzWithDb(db *gorm.DB) gin.HandlerFunc {
+	return func(c *gin.Context) {
+		var b bool
+		tx := db.Raw("SELECT 1 = 1").Scan(&b)
+
+		if tx.Error != nil {
+			c.AbortWithStatus(http.StatusServiceUnavailable)
+		}
+
+		c.Writer.WriteHeader(http.StatusOK)
+	}
 }
 
 // readyz is a readiness probe.
@@ -68,7 +83,22 @@ func InitApp(dsn string) (*gorm.DB, error) {
 		}
 	}
 
-	return gorm.Open(postgres.Open(dsn), &gorm.Config{})
+	db, err := gorm.Open(postgres.Open(dsn), &gorm.Config{})
+
+	db.Use(prometheus.New(prometheus.Config{
+		DBName:          db.Name(),                   // use `DBName` as metrics label
+		RefreshInterval: 15,                          // Refresh metrics interval (default 15 seconds)
+		PushAddr:        "prometheus pusher address", // push metrics if `PushAddr` configured
+		StartServer:     true,                        // start http server to expose metrics
+		HTTPServerPort:  8080,                        // configure http server port, default port 8080 (if you have configured multiple instances, only the first `HTTPServerPort` will be used to start server)
+		MetricsCollector: []prometheus.MetricsCollector{
+			&prometheus.Postgres{
+				VariableNames: []string{"Threads_running"},
+			},
+		}, // user defined metrics
+	}))
+
+	return db, err
 }
 
 func EncodeResponse(_ context.Context, w http.ResponseWriter, response interface{}) error {
