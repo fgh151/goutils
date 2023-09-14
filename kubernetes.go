@@ -9,7 +9,6 @@ import (
 	"github.com/joho/godotenv"
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
-	"gorm.io/plugin/prometheus"
 	"log"
 	"net/http"
 	"os"
@@ -85,18 +84,18 @@ func InitApp(dsn string) (*gorm.DB, error) {
 
 	db, err := gorm.Open(postgres.Open(dsn), &gorm.Config{})
 
-	db.Use(prometheus.New(prometheus.Config{
-		DBName:          db.Name(),                   // use `DBName` as metrics label
-		RefreshInterval: 15,                          // Refresh metrics interval (default 15 seconds)
-		PushAddr:        "prometheus pusher address", // push metrics if `PushAddr` configured
-		StartServer:     true,                        // start http server to expose metrics
-		HTTPServerPort:  8080,                        // configure http server port, default port 8080 (if you have configured multiple instances, only the first `HTTPServerPort` will be used to start server)
-		MetricsCollector: []prometheus.MetricsCollector{
-			&prometheus.Postgres{
-				VariableNames: []string{"Threads_running"},
-			},
-		}, // user defined metrics
-	}))
+	//db.Use(prometheus.New(prometheus.Config{
+	//	DBName:          db.Name(),                   // use `DBName` as metrics label
+	//	RefreshInterval: 15,                          // Refresh metrics interval (default 15 seconds)
+	//	PushAddr:        "prometheus pusher address", // push metrics if `PushAddr` configured
+	//	StartServer:     true,                        // start http server to expose metrics
+	//	HTTPServerPort:  8080,                        // configure http server port, default port 8080 (if you have configured multiple instances, only the first `HTTPServerPort` will be used to start server)
+	//	MetricsCollector: []prometheus.MetricsCollector{
+	//		&prometheus.Postgres{
+	//			VariableNames: []string{"Threads_running"},
+	//		},
+	//	}, // user defined metrics
+	//}))
 
 	return db, err
 }
