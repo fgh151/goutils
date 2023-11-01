@@ -10,8 +10,11 @@ import (
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
 	"log"
+	"net"
 	"net/http"
 	"os"
+	"strconv"
+	"strings"
 	"sync/atomic"
 )
 
@@ -102,4 +105,48 @@ func InitApp(dsn string) (*gorm.DB, error) {
 
 func EncodeResponse(_ context.Context, w http.ResponseWriter, response interface{}) error {
 	return json.NewEncoder(w).Encode(response)
+}
+
+var registrar *sdetcd.Registrar
+
+func initializeInDocker() {
+	if _, ok := os.LookupEnv("IN_DOCKER"); ok {
+		var client, _ = sdetcd.NewClient(context.Background(), []string{os.Getenv("ETCD_ADDR")}, sdetcd.ClientOptions{})
+
+		var (
+			prefix   = strings.Join(GetLocalIPs(), "/")
+			instance = strconv.Itoa(os.Getpid())
+			key      = prefix + instance
+		)
+
+		registrar = sdetcd.NewRegistrar(client, sdetcd.Service{
+			Key:   "/user/",
+			Value: key,
+		}, GetLogger())
+
+		registrar.Register()
+	}
+}
+
+func deinitializeInDocker() {
+	if registrar != nil {
+		registrar.Deregister()
+	}
+}
+
+func GetLocalIPs() []string {
+	var ips []string
+	addresses, err := net.InterfaceAddrs()
+	if err != nil {
+		return []string{""}
+	}
+
+	for _, addr := range addresses {
+		if ipnet, ok := addr.(*net.IPNet); ok && !ipnet.IP.IsLoopback() {
+			if ipnet.IP.To4() != nil {
+				ips = append(ips, ipnet.IP.String())
+			}
+		}
+	}
+	return ips
 }
