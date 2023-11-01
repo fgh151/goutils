@@ -97,7 +97,7 @@ func EncodeResponse(_ context.Context, w http.ResponseWriter, response interface
 
 var registrar *sdetcd.Registrar
 
-func initializeInDocker() {
+func InitializeInDocker() {
 	if _, ok := os.LookupEnv("IN_DOCKER"); ok {
 		var client, _ = sdetcd.NewClient(context.Background(), []string{os.Getenv("ETCD_ADDR")}, sdetcd.ClientOptions{})
 
@@ -116,7 +116,7 @@ func initializeInDocker() {
 	}
 }
 
-func deinitializeInDocker() {
+func DeinitializeInDocker() {
 	if registrar != nil {
 		registrar.Deregister()
 	}
