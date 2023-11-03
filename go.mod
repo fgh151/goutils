@@ -1,4 +1,4 @@
-module github.com/fgh151/goutils
+module github.com/runet-id/go-sdk
 
 go 1.20
 
@@ -6,9 +6,9 @@ require (
 	github.com/gin-gonic/gin v1.9.1
 	github.com/go-kit/kit v0.12.0
 	github.com/joho/godotenv v1.5.1
+	github.com/prometheus/client_golang v1.15.0
 	gorm.io/driver/postgres v1.5.2
 	gorm.io/gorm v1.25.2
-	gorm.io/plugin/prometheus v0.0.0-20230504115745-1aec2356381b
 )
 
 require (
@@ -41,10 +41,10 @@ require (
 	github.com/modern-go/concurrent v0.0.0-20180306012644-bacd9c7ef1dd // indirect
 	github.com/modern-go/reflect2 v1.0.2 // indirect
 	github.com/pelletier/go-toml/v2 v2.0.8 // indirect
-	github.com/prometheus/client_golang v1.15.0 // indirect
 	github.com/prometheus/client_model v0.3.0 // indirect
 	github.com/prometheus/common v0.42.0 // indirect
 	github.com/prometheus/procfs v0.9.0 // indirect
+	github.com/rogpeppe/go-internal v1.11.0 // indirect
 	github.com/twitchyliquid64/golang-asm v0.15.1 // indirect
 	github.com/ugorji/go/codec v1.2.11 // indirect
 	go.etcd.io/etcd/api/v3 v3.5.0 // indirect
