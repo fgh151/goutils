@@ -1,4 +1,4 @@
-module github.com/runet-id/go-sdk
+module github.com/runetid/go-sdk
 
 go 1.20
 
