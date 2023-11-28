@@ -3,6 +3,9 @@ package sdk
 import (
 	"github.com/gin-gonic/gin"
 	"gorm.io/gorm"
+	"log"
+	"net/http"
+	"os"
 )
 
 func CorsMiddleware() func(c *gin.Context) {
@@ -35,47 +38,36 @@ func DbMiddleware(db *gorm.DB) gin.HandlerFunc {
 	}
 }
 
-func ApiMiddleware(db *gorm.DB) gin.HandlerFunc {
+func AccountMiddleware(db *gorm.DB) gin.HandlerFunc {
 	return func(c *gin.Context) {
 
-		//log.Println(c.RemoteIP())
-		//
-		//key := c.Request.Header.Get("ApiKey")
-		//hash := c.Request.Header.Get("Hash")
-		//time := c.Request.Header.Get("Time")
-		//
-		//var account models.Account
-		//
-		//tx := db.Debug().Where("key = ? AND blocked = ?", key, false).Find(&account)
-		//
-		//if tx.Error != nil || tx.RowsAffected < 1 {
-		//	c.JSON(http.StatusUnauthorized, gin.H{"Message": "Unauthorized"})
-		//	c.Writer.WriteHeaderNow()
-		//	c.Abort()
-		//	return
-		//}
-		//
-		//if account.CheckHash(hash, time) {
-		//	c.Set("apiAccount", &account)
-		//} else {
-		//	c.JSON(http.StatusUnauthorized, gin.H{"Message": "Wrong api key or hash or timestamp"})
-		//	c.Writer.WriteHeaderNow()
-		//	c.Abort()
-		//	return
-		//}
-		//
-		//ip := c.Request.Header.Get("X-Real-IP")
-		//
-		//if ip == "" {
-		//	ip = c.RemoteIP()
-		//}
-		//
-		//if !account.CheckIp(db, ip) {
-		//	c.JSON(http.StatusUnauthorized, gin.H{"Message": "Wrong server ip"})
-		//	c.Writer.WriteHeaderNow()
-		//	c.Abort()
-		//	return
-		//}
+		log.Println(c.RemoteIP())
+
+		key := c.Request.Header.Get("ApiKey")
+		hash := c.Request.Header.Get("Hash")
+		time := c.Request.Header.Get("Time")
+
+		req, err := http.NewRequest(http.MethodGet, os.Getenv("APIACCOUNT")+"/apiaccount/check", nil)
+
+		if err != nil {
+			c.JSON(http.StatusUnauthorized, gin.H{"message": "Cant check account"})
+			c.Writer.WriteHeaderNow()
+			c.Abort()
+			return
+		}
+
+		req.URL.Query().Set("ApiKey", key)
+		req.URL.Query().Set("Hash", hash)
+		req.URL.Query().Set("Time", time)
+
+		res, err := http.DefaultClient.Do(req)
+
+		if res.StatusCode != http.StatusOK {
+			c.JSON(http.StatusUnauthorized, res.Body)
+			c.Writer.WriteHeaderNow()
+			c.Abort()
+			return
+		}
 
 		c.Next()
 	}
