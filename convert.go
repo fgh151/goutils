@@ -4,7 +4,7 @@ import (
 	"strconv"
 )
 
-func String2int(s string) (int, error) {
+func String2Int(s string) (int, error) {
 	return strconv.Atoi(s)
 }
 
