@@ -21,8 +21,8 @@ func (a Application) Run() {
 	isReady.Store(false)
 	sdk.AppendMetrics(a.Router)
 
-	a.Router.Any("/healthz", sdk.HealthzWithDb(a.Db))
-	a.Router.Any("/readyz", gin.WrapF(sdk.Readyz(isReady)))
+	a.Router.GET("/healthz", sdk.HealthzWithDb(a.Db))
+	a.Router.GET("/readyz", gin.WrapF(sdk.Readyz(isReady)))
 
 	a.Router.NoRoute(func(c *gin.Context) {
 		c.JSON(http.StatusNotFound, gin.H{"message": "Page not found"})
@@ -38,7 +38,10 @@ type CrudModel interface {
 	List(db *gorm.DB, request ListRequest, params ...FilterParams) (interface{}, int64, error)
 	GetFilterParams(c *gin.Context) []FilterParams
 	Create(db *gorm.DB) (interface{}, error)
+	Update(db *gorm.DB) (interface{}, error)
 	DecodeCreate(c *gin.Context) (interface{}, error)
+	Delete(db *gorm.DB, key string) bool
+	Get(db *gorm.DB, key string) (interface{}, error)
 }
 
 type BaseCrudModel struct {
@@ -85,6 +88,44 @@ func (a Application) AppendCreateEndpoint(prefix string, entity CrudModel) {
 	})
 }
 
+func (a Application) AppendUpdateEndpoint(prefix string, entity CrudModel) {
+	a.Router.PATCH(prefix+"/", func(c *gin.Context) {
+		decode, _ := entity.DecodeCreate(c)
+		m, err := decode.(CrudModel).Update(a.Db)
+
+		c.JSON(200, gin.H{"data": m, "error": err})
+		return
+	})
+}
+
+func (a Application) AppendDeleteEndpoint(prefix string, entity CrudModel) {
+	a.Router.DELETE(prefix+"/", func(c *gin.Context) {
+
+		if entity.Delete(a.Db, c.Param("id")) {
+
+			c.JSON(http.StatusOK, gin.H{"message": "ok"})
+			return
+		}
+
+		c.JSON(http.StatusConflict, gin.H{"message": "cant delete"})
+		return
+	})
+}
+
+func (a Application) AppendGetEndpoint(prefix string, entity CrudModel) {
+	a.Router.GET(prefix+"/", func(c *gin.Context) {
+		model, err := entity.Get(a.Db, c.Param("id"))
+
+		if err != nil {
+			c.JSON(http.StatusNotFound, gin.H{"data": model, "error": err})
+			return
+		}
+
+		c.JSON(200, gin.H{"data": model, "error": err})
+		return
+	})
+}
+
 func NewCrudApplication() (*Application, error) {
 
 	dsn := fmt.Sprintf(
@@ -102,7 +143,7 @@ func NewCrudApplication() (*Application, error) {
 	r.Use(sdk.CorsMiddleware())
 	r.Use(sdk.JsonMiddleware())
 	r.Use(sdk.DbMiddleware(db))
-	r.Use(sdk.ApiMiddleware(db))
+	//r.Use(sdk.ApiMiddleware(db))
 
 	return &Application{
 		Router: r,
