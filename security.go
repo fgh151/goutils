@@ -3,6 +3,7 @@ package sdk
 import (
 	"crypto/md5"
 	"encoding/hex"
+	"github.com/gin-gonic/gin"
 	"math/rand"
 )
 
@@ -19,4 +20,11 @@ func RandString(n int) string {
 		b[i] = letterBytes[rand.Int63()%int64(len(letterBytes))]
 	}
 	return string(b)
+}
+
+func AccessMiddleware() gin.HandlerFunc {
+	return func(c *gin.Context) {
+
+		c.Next()
+	}
 }
