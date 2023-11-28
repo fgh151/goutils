@@ -56,8 +56,12 @@ func (u BaseCrudModel) DecodeCreate(c *gin.Context) interface{} {
 	return c.Bind(u)
 }
 
-func (a Application) AppendListEndpoint(prefix string, entity CrudModel) {
+func (a Application) AppendListEndpoint(prefix string, entity CrudModel, middlewares ...gin.HandlerFunc) {
 	a.Router.GET(prefix+"/list", func(c *gin.Context) {
+
+		for _, middleware := range middlewares {
+			middleware(c)
+		}
 
 		var request ListRequest
 		err := c.ShouldBindQuery(&request)
@@ -78,8 +82,13 @@ func (a Application) AppendListEndpoint(prefix string, entity CrudModel) {
 	})
 }
 
-func (a Application) AppendCreateEndpoint(prefix string, entity CrudModel) {
+func (a Application) AppendCreateEndpoint(prefix string, entity CrudModel, middlewares ...gin.HandlerFunc) {
 	a.Router.POST(prefix+"/", func(c *gin.Context) {
+
+		for _, middleware := range middlewares {
+			middleware(c)
+		}
+
 		decode, _ := entity.DecodeCreate(c)
 		m, err := decode.(CrudModel).Create(a.Db)
 
@@ -88,8 +97,13 @@ func (a Application) AppendCreateEndpoint(prefix string, entity CrudModel) {
 	})
 }
 
-func (a Application) AppendUpdateEndpoint(prefix string, entity CrudModel) {
+func (a Application) AppendUpdateEndpoint(prefix string, entity CrudModel, middlewares ...gin.HandlerFunc) {
 	a.Router.PATCH(prefix+"/", func(c *gin.Context) {
+
+		for _, middleware := range middlewares {
+			middleware(c)
+		}
+
 		decode, _ := entity.DecodeCreate(c)
 		m, err := decode.(CrudModel).Update(a.Db)
 
@@ -98,8 +112,12 @@ func (a Application) AppendUpdateEndpoint(prefix string, entity CrudModel) {
 	})
 }
 
-func (a Application) AppendDeleteEndpoint(prefix string, entity CrudModel) {
+func (a Application) AppendDeleteEndpoint(prefix string, entity CrudModel, middlewares ...gin.HandlerFunc) {
 	a.Router.DELETE(prefix+"/", func(c *gin.Context) {
+
+		for _, middleware := range middlewares {
+			middleware(c)
+		}
 
 		if entity.Delete(a.Db, c.Param("id")) {
 
@@ -112,8 +130,13 @@ func (a Application) AppendDeleteEndpoint(prefix string, entity CrudModel) {
 	})
 }
 
-func (a Application) AppendGetEndpoint(prefix string, entity CrudModel) {
+func (a Application) AppendGetEndpoint(prefix string, entity CrudModel, middlewares ...gin.HandlerFunc) {
 	a.Router.GET(prefix+"/", func(c *gin.Context) {
+
+		for _, middleware := range middlewares {
+			middleware(c)
+		}
+
 		model, err := entity.Get(a.Db, c.Param("id"))
 
 		if err != nil {
@@ -143,7 +166,7 @@ func NewCrudApplication() (*Application, error) {
 	r.Use(sdk.CorsMiddleware())
 	r.Use(sdk.JsonMiddleware())
 	r.Use(sdk.DbMiddleware(db))
-	//r.Use(sdk.ApiMiddleware(db))
+	r.Use(sdk.AccountMiddleware())
 
 	return &Application{
 		Router: r,

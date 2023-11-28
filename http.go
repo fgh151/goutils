@@ -38,16 +38,14 @@ func DbMiddleware(db *gorm.DB) gin.HandlerFunc {
 	}
 }
 
-func AccountMiddleware(db *gorm.DB) gin.HandlerFunc {
+func AccountMiddleware() gin.HandlerFunc {
 	return func(c *gin.Context) {
-
-		log.Println(c.RemoteIP())
 
 		key := c.Request.Header.Get("ApiKey")
 		hash := c.Request.Header.Get("Hash")
 		time := c.Request.Header.Get("Time")
 
-		req, err := http.NewRequest(http.MethodGet, os.Getenv("APIACCOUNT")+"/apiaccount/check", nil)
+		req, err := http.NewRequest(http.MethodGet, os.Getenv("DNS_ACCOUNT")+"/apiaccount/check", nil)
 
 		if err != nil {
 			c.JSON(http.StatusUnauthorized, gin.H{"message": "Cant check account"})
