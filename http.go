@@ -6,6 +6,7 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"strings"
 )
 
 func CorsMiddleware() func(c *gin.Context) {
@@ -57,6 +58,53 @@ func AccountMiddleware() gin.HandlerFunc {
 		req.URL.Query().Set("ApiKey", key)
 		req.URL.Query().Set("Hash", hash)
 		req.URL.Query().Set("Time", time)
+
+		res, err := http.DefaultClient.Do(req)
+
+		if res.StatusCode != http.StatusOK {
+			c.JSON(http.StatusUnauthorized, res.Body)
+			c.Writer.WriteHeaderNow()
+			c.Abort()
+			return
+		}
+
+		c.Next()
+	}
+}
+
+func RbacMiddleware(role string) gin.HandlerFunc {
+	return func(c *gin.Context) {
+
+		log.Println(c.RemoteIP())
+
+		header := c.Request.Header.Get("Authorization")
+
+		if header == "" {
+			c.JSON(http.StatusUnauthorized, gin.H{"message": "Messed Authorization header"})
+			c.Writer.WriteHeaderNow()
+			c.Abort()
+			return
+		}
+
+		splitToken := strings.Split(header, "Bearer ")
+
+		if len(splitToken) < 2 {
+			c.JSON(http.StatusUnauthorized, gin.H{"message": "Messed Bearer token"})
+			c.Writer.WriteHeaderNow()
+			c.Abort()
+			return
+		}
+
+		token := strings.TrimSpace(splitToken[1])
+
+		req, err := http.NewRequest(http.MethodGet, os.Getenv("DNS_USERS")+"/user/can/"+token+"/"+role, nil)
+
+		if err != nil {
+			c.JSON(http.StatusUnauthorized, gin.H{"message": "Cant check user permissions"})
+			c.Writer.WriteHeaderNow()
+			c.Abort()
+			return
+		}
 
 		res, err := http.DefaultClient.Do(req)
 
