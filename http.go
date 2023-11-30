@@ -6,6 +6,7 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"slices"
 	"strings"
 )
 
@@ -39,8 +40,18 @@ func DbMiddleware(db *gorm.DB) gin.HandlerFunc {
 	}
 }
 
-func AccountMiddleware() gin.HandlerFunc {
+func AccountMiddleware(whiteList []string) gin.HandlerFunc {
+
+	wl := append([]string{"/metrics", "/healthz", "/readyz"}, whiteList...)
+
 	return func(c *gin.Context) {
+
+		println(c.Request.URL.Path)
+
+		if slices.Contains(wl, c.Request.URL.Path) {
+			c.Next()
+			return
+		}
 
 		key := c.Request.Header.Get("ApiKey")
 		hash := c.Request.Header.Get("Hash")
@@ -60,6 +71,13 @@ func AccountMiddleware() gin.HandlerFunc {
 		req.URL.Query().Set("Time", time)
 
 		res, err := http.DefaultClient.Do(req)
+
+		if err != nil {
+			c.JSON(http.StatusUnauthorized, gin.H{"message": "Cant check api account"})
+			c.Writer.WriteHeaderNow()
+			c.Abort()
+			return
+		}
 
 		if res.StatusCode != http.StatusOK {
 			c.JSON(http.StatusUnauthorized, res.Body)

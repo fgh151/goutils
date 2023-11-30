@@ -149,7 +149,7 @@ func (a Application) AppendGetEndpoint(prefix string, entity CrudModel, middlewa
 	})
 }
 
-func NewCrudApplication() (*Application, error) {
+func NewCrudApplication(publicRoutes []string) (*Application, error) {
 
 	dsn := fmt.Sprintf(
 		"host=%s user=%s password=%s dbname=%s port=%s sslmode=disable TimeZone=Europe/Moscow",
@@ -166,7 +166,7 @@ func NewCrudApplication() (*Application, error) {
 	r.Use(sdk.CorsMiddleware())
 	r.Use(sdk.JsonMiddleware())
 	r.Use(sdk.DbMiddleware(db))
-	r.Use(sdk.AccountMiddleware())
+	r.Use(sdk.AccountMiddleware(publicRoutes))
 
 	return &Application{
 		Router: r,
