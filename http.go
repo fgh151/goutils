@@ -6,7 +6,7 @@ import (
 	"log"
 	"net/http"
 	"os"
-	"slices"
+	"regexp"
 	"strings"
 )
 
@@ -46,11 +46,11 @@ func AccountMiddleware(whiteList []string) gin.HandlerFunc {
 
 	return func(c *gin.Context) {
 
-		println(c.Request.URL.Path)
-
-		if slices.Contains(wl, c.Request.URL.Path) {
-			c.Next()
-			return
+		for _, s := range wl {
+			if ok, _ := regexp.MatchString(s, c.Request.URL.Path); ok {
+				c.Next()
+				return
+			}
 		}
 
 		key := c.Request.Header.Get("ApiKey")
