@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"github.com/gin-gonic/gin"
 	"github.com/runetid/go-sdk"
+	"github.com/swaggo/files"
+	"github.com/swaggo/gin-swagger"
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
 	"net/http"
@@ -147,6 +149,10 @@ func (a Application) AppendGetEndpoint(prefix string, entity CrudModel, middlewa
 		c.JSON(200, gin.H{"data": model, "error": err})
 		return
 	})
+}
+
+func (a Application) AppendSwagger(prefix string) {
+	a.Router.GET(prefix+"/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
 }
 
 func NewCrudApplication(publicRoutes []string) (*Application, error) {
