@@ -54,8 +54,8 @@ func (u BaseCrudModel) GetFilterParams(c *gin.Context) []FilterParams {
 	return p
 }
 
-func (u BaseCrudModel) DecodeCreate(c *gin.Context) interface{} {
-	return c.Bind(u)
+func (u BaseCrudModel) DecodeCreate(c *gin.Context) (interface{}, error) {
+	return c.Bind(u), nil
 }
 
 func (a Application) AppendListEndpoint(prefix string, entity CrudModel, middlewares ...gin.HandlerFunc) {
