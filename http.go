@@ -66,9 +66,11 @@ func AccountMiddleware(whiteList []string) gin.HandlerFunc {
 			return
 		}
 
-		req.URL.Query().Set("ApiKey", key)
-		req.URL.Query().Set("Hash", hash)
-		req.URL.Query().Set("Time", time)
+		q := req.URL.Query()
+		q.Add("ApiKey", key)
+		q.Add("Hash", hash)
+		q.Add("Time", time)
+		req.URL.RawQuery = q.Encode()
 
 		res, err := http.DefaultClient.Do(req)
 
