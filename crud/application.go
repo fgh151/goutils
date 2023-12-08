@@ -85,7 +85,7 @@ func (a Application) AppendListEndpoint(prefix string, entity CrudModel, middlew
 }
 
 func (a Application) AppendCreateEndpoint(prefix string, entity CrudModel, middlewares ...gin.HandlerFunc) {
-	a.Router.POST(prefix+"/", func(c *gin.Context) {
+	a.Router.POST(prefix, func(c *gin.Context) {
 
 		for _, middleware := range middlewares {
 			middleware(c)
@@ -100,7 +100,7 @@ func (a Application) AppendCreateEndpoint(prefix string, entity CrudModel, middl
 }
 
 func (a Application) AppendUpdateEndpoint(prefix string, entity CrudModel, middlewares ...gin.HandlerFunc) {
-	a.Router.PATCH(prefix+"/", func(c *gin.Context) {
+	a.Router.PATCH(prefix, func(c *gin.Context) {
 
 		for _, middleware := range middlewares {
 			middleware(c)
@@ -115,7 +115,7 @@ func (a Application) AppendUpdateEndpoint(prefix string, entity CrudModel, middl
 }
 
 func (a Application) AppendDeleteEndpoint(prefix string, entity CrudModel, middlewares ...gin.HandlerFunc) {
-	a.Router.DELETE(prefix+"/", func(c *gin.Context) {
+	a.Router.DELETE(prefix, func(c *gin.Context) {
 
 		for _, middleware := range middlewares {
 			middleware(c)
@@ -133,7 +133,7 @@ func (a Application) AppendDeleteEndpoint(prefix string, entity CrudModel, middl
 }
 
 func (a Application) AppendGetEndpoint(prefix string, entity CrudModel, middlewares ...gin.HandlerFunc) {
-	a.Router.GET(prefix+"/", func(c *gin.Context) {
+	a.Router.GET(prefix, func(c *gin.Context) {
 
 		for _, middleware := range middlewares {
 			middleware(c)
