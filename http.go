@@ -53,6 +53,8 @@ func AccountMiddleware(whiteList []string) gin.HandlerFunc {
 			}
 		}
 
+		doNext := true
+
 		key := c.Request.Header.Get("ApiKey")
 		hash := c.Request.Header.Get("Hash")
 		time := c.Request.Header.Get("Time")
@@ -63,12 +65,15 @@ func AccountMiddleware(whiteList []string) gin.HandlerFunc {
 			c.JSON(http.StatusUnauthorized, gin.H{"message": "Cant check account"})
 			c.Writer.WriteHeaderNow()
 			c.Abort()
+			doNext = false
 			return
 		}
 
-		req.URL.Query().Set("ApiKey", key)
-		req.URL.Query().Set("Hash", hash)
-		req.URL.Query().Set("Time", time)
+		q := req.URL.Query()
+		q.Add("ApiKey", key)
+		q.Add("Hash", hash)
+		q.Add("Time", time)
+		req.URL.RawQuery = q.Encode()
 
 		res, err := http.DefaultClient.Do(req)
 
@@ -76,6 +81,7 @@ func AccountMiddleware(whiteList []string) gin.HandlerFunc {
 			c.JSON(http.StatusUnauthorized, gin.H{"message": "Cant check api account"})
 			c.Writer.WriteHeaderNow()
 			c.Abort()
+			doNext = false
 			return
 		}
 
@@ -83,10 +89,13 @@ func AccountMiddleware(whiteList []string) gin.HandlerFunc {
 			c.JSON(http.StatusUnauthorized, res.Body)
 			c.Writer.WriteHeaderNow()
 			c.Abort()
+			doNext = false
 			return
 		}
 
-		c.Next()
+		if doNext {
+			c.Next()
+		}
 	}
 }
 

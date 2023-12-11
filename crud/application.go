@@ -66,12 +66,24 @@ func (a Application) AppendListEndpoint(prefix string, entity CrudModel, middlew
 		}
 
 		var request ListRequest
-		err := c.ShouldBindQuery(&request)
+		err := c.Bind(&request)
 		if err != nil {
 			c.JSON(500, gin.H{"message": "Wrong limit or offset params " + err.Error()})
 			c.Writer.WriteHeaderNow()
 			c.Abort()
 			return
+		}
+
+		t, e := c.GetQueryMap("filter")
+
+		if e == true {
+			request.Filter = t
+		}
+
+		s, e := c.GetQueryMap("sort")
+
+		if e == true {
+			request.Sort = s
 		}
 
 		var m interface{}
@@ -85,7 +97,7 @@ func (a Application) AppendListEndpoint(prefix string, entity CrudModel, middlew
 }
 
 func (a Application) AppendCreateEndpoint(prefix string, entity CrudModel, middlewares ...gin.HandlerFunc) {
-	a.Router.POST(prefix+"/", func(c *gin.Context) {
+	a.Router.POST(prefix, func(c *gin.Context) {
 
 		for _, middleware := range middlewares {
 			middleware(c)
@@ -100,7 +112,7 @@ func (a Application) AppendCreateEndpoint(prefix string, entity CrudModel, middl
 }
 
 func (a Application) AppendUpdateEndpoint(prefix string, entity CrudModel, middlewares ...gin.HandlerFunc) {
-	a.Router.PUT(prefix+"/", func(c *gin.Context) {
+	a.Router.PUT(prefix, func(c *gin.Context) {
 
 		for _, middleware := range middlewares {
 			middleware(c)
@@ -115,7 +127,7 @@ func (a Application) AppendUpdateEndpoint(prefix string, entity CrudModel, middl
 }
 
 func (a Application) AppendDeleteEndpoint(prefix string, entity CrudModel, middlewares ...gin.HandlerFunc) {
-	a.Router.DELETE(prefix+"/", func(c *gin.Context) {
+	a.Router.DELETE(prefix, func(c *gin.Context) {
 
 		for _, middleware := range middlewares {
 			middleware(c)
@@ -133,7 +145,7 @@ func (a Application) AppendDeleteEndpoint(prefix string, entity CrudModel, middl
 }
 
 func (a Application) AppendGetEndpoint(prefix string, entity CrudModel, middlewares ...gin.HandlerFunc) {
-	a.Router.GET(prefix+"/", func(c *gin.Context) {
+	a.Router.GET(prefix, func(c *gin.Context) {
 
 		for _, middleware := range middlewares {
 			middleware(c)
@@ -181,8 +193,11 @@ func NewCrudApplication(publicRoutes []string) (*Application, error) {
 }
 
 type ListRequest struct {
-	Limit  int `form:"limit" binding:"required,number,min=1,max=100"`
-	Offset int `form:"offset" binding:"number"`
+	Limit  int               `form:"limit" binding:"required,number,min=1,max=100"`
+	Offset int               `form:"offset" binding:"number"`
+	Filter map[string]string `form:"filter"`
+	//Pagination map[string]string `form:"pagination"`
+	Sort map[string]string `form:"sort"`
 }
 
 type FilterParams struct {
