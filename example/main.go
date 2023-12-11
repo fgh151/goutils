@@ -37,7 +37,20 @@ func (u ApiAccount) TableName() string {
 
 func (u ApiAccount) List(db *gorm.DB, request crud.ListRequest, params ...crud.FilterParams) (interface{}, int64, error) {
 	var models []ApiAccount
-	err := db.Debug().Limit(request.Limit).Offset(request.Offset).Find(&models).Error
+
+	query := db.Debug().Limit(request.Limit).Offset(request.Offset)
+
+	if len(request.Filter) > 0 {
+		for k, v := range request.Filter {
+			query.Where("? = ? ", k, v)
+		}
+	}
+
+	if len(request.Sort) == 2 {
+		query.Order(request.Sort["field"] + " " + request.Sort["order"])
+	}
+
+	err := query.Find(&models).Error
 	var count int64
 	db.Model(ApiAccount{}).Count(&count)
 	return models, count, err
@@ -182,7 +195,7 @@ func (u AccountDomain) Get(db *gorm.DB, key string) (interface{}, error) {
 // @externalDocs.url          https://swagger.io/resources/open-api/
 func main() {
 
-	app, err := crud.NewCrudApplication([]string{"/apiaccount/check", "/apiaccount/swagger/*"})
+	app, err := crud.NewCrudApplication([]string{"/apiaccount/check", "/apiaccount/swagger/*", "/apiaccount/*"})
 
 	if err != nil {
 		log.Panic("Cant init app")

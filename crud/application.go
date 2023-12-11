@@ -66,12 +66,24 @@ func (a Application) AppendListEndpoint(prefix string, entity CrudModel, middlew
 		}
 
 		var request ListRequest
-		err := c.ShouldBindQuery(&request)
+		err := c.Bind(&request)
 		if err != nil {
 			c.JSON(500, gin.H{"message": "Wrong limit or offset params " + err.Error()})
 			c.Writer.WriteHeaderNow()
 			c.Abort()
 			return
+		}
+
+		t, e := c.GetQueryMap("filter")
+
+		if e == true {
+			request.Filter = t
+		}
+
+		s, e := c.GetQueryMap("sort")
+
+		if e == true {
+			request.Sort = s
 		}
 
 		var m interface{}
@@ -181,8 +193,11 @@ func NewCrudApplication(publicRoutes []string) (*Application, error) {
 }
 
 type ListRequest struct {
-	Limit  int `form:"limit" binding:"required,number,min=1,max=100"`
-	Offset int `form:"offset" binding:"number"`
+	Limit  int               `form:"limit" binding:"required,number,min=1,max=100"`
+	Offset int               `form:"offset" binding:"number"`
+	Filter map[string]string `form:"filter"`
+	//Pagination map[string]string `form:"pagination"`
+	Sort map[string]string `form:"sort"`
 }
 
 type FilterParams struct {
