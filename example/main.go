@@ -31,11 +31,11 @@ type ApiAccount struct {
 	crud.BaseCrudModel `swaggerignore:"true"`
 }
 
-func (u ApiAccount) TableName() string {
+func (u *ApiAccount) TableName() string {
 	return "api_account"
 }
 
-func (u ApiAccount) List(db *gorm.DB, request crud.ListRequest, params ...crud.FilterParams) (interface{}, int64, error) {
+func (u *ApiAccount) List(db *gorm.DB, request crud.ListRequest, params ...crud.FilterParams) (interface{}, int64, error) {
 	var models []ApiAccount
 
 	query := db.Debug().Limit(request.Limit).Offset(request.Offset)
@@ -56,28 +56,28 @@ func (u ApiAccount) List(db *gorm.DB, request crud.ListRequest, params ...crud.F
 	return models, count, err
 }
 
-func (u ApiAccount) Create(db *gorm.DB) (interface{}, error) {
+func (u *ApiAccount) Create(db *gorm.DB) (interface{}, error) {
 
 	err := db.Debug().Create(&u).Error
 	return u, err
 }
 
-func (u ApiAccount) Update(db *gorm.DB) (interface{}, error) {
+func (u *ApiAccount) Update(db *gorm.DB, key string) (interface{}, error) {
 
 	err := db.Debug().Save(&u).Error
 	return u, err
 }
 
-func (u ApiAccount) DecodeCreate(c *gin.Context) (interface{}, error) {
+func (u *ApiAccount) DecodeCreate(c *gin.Context) (interface{}, error) {
 	err := c.Bind(&u)
 	return u, err
 }
 
-func (u ApiAccount) Delete(db *gorm.DB, key string) bool {
+func (u *ApiAccount) Delete(db *gorm.DB, key string) bool {
 	return db.Debug().Delete(&ApiAccount{}, key).RowsAffected > 0
 }
 
-func (u ApiAccount) Get(db *gorm.DB, key string) (interface{}, error) {
+func (u *ApiAccount) Get(db *gorm.DB, key string) (interface{}, error) {
 	var model ApiAccount
 	tx := db.Debug().Where("id = ?", key).First(&model)
 	err := tx.Error
@@ -89,14 +89,14 @@ func (u ApiAccount) Get(db *gorm.DB, key string) (interface{}, error) {
 	return model, err
 }
 
-func (u ApiAccount) CheckHash(hash string, time string) bool {
+func (u *ApiAccount) CheckHash(hash string, time string) bool {
 	data := u.Key + time + u.Secret
 	h := md5.Sum([]byte(data))
 	result := hex.EncodeToString(h[:16])
 	return hash == result
 }
 
-func (u ApiAccount) CheckIp(db *gorm.DB, ip string) bool {
+func (u *ApiAccount) CheckIp(db *gorm.DB, ip string) bool {
 	var exists bool
 	err := db.Debug().Model(AccountDomain{}).
 		Select("count(*) > 0").
@@ -117,7 +117,7 @@ func (u *AccountDomain) TableName() string {
 	return "api_account_domain"
 }
 
-func (u AccountDomain) List(db *gorm.DB, request crud.ListRequest, params ...crud.FilterParams) (interface{}, int64, error) {
+func (u *AccountDomain) List(db *gorm.DB, request crud.ListRequest, params ...crud.FilterParams) (interface{}, int64, error) {
 	var models []ApiAccount
 
 	query := db.Debug().Limit(request.Limit).Offset(request.Offset)
@@ -132,7 +132,7 @@ func (u AccountDomain) List(db *gorm.DB, request crud.ListRequest, params ...cru
 	return models, count, err
 }
 
-func (u AccountDomain) GetFilterParams(c *gin.Context) []crud.FilterParams {
+func (u *AccountDomain) GetFilterParams(c *gin.Context) []crud.FilterParams {
 	var p []crud.FilterParams
 	p = append(p, crud.FilterParams{
 		Key:      "account_id",
@@ -142,27 +142,27 @@ func (u AccountDomain) GetFilterParams(c *gin.Context) []crud.FilterParams {
 	return p
 }
 
-func (u AccountDomain) Create(db *gorm.DB) (interface{}, error) {
+func (u *AccountDomain) Create(db *gorm.DB) (interface{}, error) {
 	err := db.Debug().Create(&u).Error
 	return u, err
 }
 
-func (u AccountDomain) Update(db *gorm.DB) (interface{}, error) {
+func (u *AccountDomain) Update(db *gorm.DB, key string) (interface{}, error) {
 	err := db.Debug().Save(&u).Error
 	return u, err
 }
 
-func (u AccountDomain) DecodeCreate(c *gin.Context) (interface{}, error) {
+func (u *AccountDomain) DecodeCreate(c *gin.Context) (interface{}, error) {
 	err := c.Bind(&u)
 	u.AccountId, err = sdk.String2Int(c.Param("id"))
 	return u, err
 }
 
-func (u AccountDomain) Delete(db *gorm.DB, key string) bool {
+func (u *AccountDomain) Delete(db *gorm.DB, key string) bool {
 	return db.Debug().Delete(&AccountDomain{}, key).RowsAffected > 0
 }
 
-func (u AccountDomain) Get(db *gorm.DB, key string) (interface{}, error) {
+func (u *AccountDomain) Get(db *gorm.DB, key string) (interface{}, error) {
 	var model AccountDomain
 	tx := db.Debug().Where("id = ?", key).First(&model)
 	err := tx.Error
@@ -203,16 +203,16 @@ func main() {
 
 	app.Db.AutoMigrate(ApiAccount{}, AccountDomain{})
 
-	app.AppendListEndpoint("/apiaccount", ApiAccount{})
-	app.AppendCreateEndpoint("/apiaccount", ApiAccount{})
-	app.AppendDeleteEndpoint("/apiaccount/:id", ApiAccount{})
-	app.AppendGetEndpoint("/apiaccount/:id", ApiAccount{})
-	app.AppendUpdateEndpoint("/apiaccount/:id", ApiAccount{})
+	app.AppendListEndpoint("/apiaccount", &ApiAccount{})
+	app.AppendCreateEndpoint("/apiaccount", &ApiAccount{})
+	app.AppendDeleteEndpoint("/apiaccount/:id", &ApiAccount{})
+	app.AppendGetEndpoint("/apiaccount/:id", &ApiAccount{})
+	app.AppendUpdateEndpoint("/apiaccount/:id", &ApiAccount{})
 
-	app.AppendListEndpoint("/apiaccount/:id/domain", AccountDomain{})
-	app.AppendDeleteEndpoint("/apiaccount/domain/:id", AccountDomain{})
-	app.AppendCreateEndpoint("/apiaccount/:id/domain", AccountDomain{})
-	app.AppendUpdateEndpoint("/apiaccount/:id/domain", AccountDomain{})
+	app.AppendListEndpoint("/apiaccount/:id/domain", &AccountDomain{})
+	app.AppendDeleteEndpoint("/apiaccount/domain/:id", &AccountDomain{})
+	app.AppendCreateEndpoint("/apiaccount/:id/domain", &AccountDomain{})
+	app.AppendUpdateEndpoint("/apiaccount/:id/domain", &AccountDomain{})
 
 	app.AppendSwagger("/apiaccount/")
 
