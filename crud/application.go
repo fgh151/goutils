@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"github.com/gin-gonic/gin"
 	"github.com/runetid/go-sdk"
+	"github.com/runetid/go-sdk/log"
 	"github.com/swaggo/files"
 	"github.com/swaggo/gin-swagger"
 	"gorm.io/driver/postgres"
@@ -11,11 +12,13 @@ import (
 	"net/http"
 	"os"
 	"sync/atomic"
+	"time"
 )
 
 type Application struct {
 	Router *gin.Engine
 	Db     *gorm.DB
+	Logger *log.AppLogger
 }
 
 func (a Application) Run() {
@@ -169,6 +172,8 @@ func (a Application) AppendSwagger(prefix string) {
 
 func NewCrudApplication(publicRoutes []string) (*Application, error) {
 
+	logger := log.NewAppLogger()
+
 	dsn := fmt.Sprintf(
 		"host=%s user=%s password=%s dbname=%s port=%s sslmode=disable TimeZone=Europe/Moscow",
 		os.Getenv("DB_HOST"),
@@ -178,17 +183,38 @@ func NewCrudApplication(publicRoutes []string) (*Application, error) {
 		os.Getenv("DB_PORT"),
 	)
 
-	db, err := gorm.Open(postgres.Open(dsn), &gorm.Config{})
+	db, err := gorm.Open(postgres.Open(dsn), &gorm.Config{Logger: logger.GetGormLogger()})
 
 	r := gin.Default()
+	r.Use(sdk.TraceMiddleware())
 	r.Use(sdk.CorsMiddleware())
 	r.Use(sdk.JsonMiddleware())
 	r.Use(sdk.DbMiddleware(db))
 	r.Use(sdk.AccountMiddleware(publicRoutes))
+	r.Use(gin.LoggerWithConfig(gin.LoggerConfig{
+		Formatter: func(param gin.LogFormatterParams) string {
+			return fmt.Sprintf("%s - [%s] %s %s %s %d %s \"%s\" %s %s\n ",
+				param.ClientIP,
+				param.TimeStamp.Format(time.RFC1123),
+				param.Method,
+				param.Path,
+				param.Request.Proto,
+				param.StatusCode,
+				param.Latency,
+				param.Request.UserAgent(),
+				param.ErrorMessage,
+				param.Keys["traceId"],
+			)
+		},
+		Output:    logger.Writer(),
+		SkipPaths: []string{},
+	}))
+	r.Use(gin.Recovery())
 
 	return &Application{
 		Router: r,
 		Db:     db,
+		Logger: logger,
 	}, err
 }
 

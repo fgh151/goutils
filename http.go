@@ -2,6 +2,7 @@ package sdk
 
 import (
 	"github.com/gin-gonic/gin"
+	"github.com/google/uuid"
 	"gorm.io/gorm"
 	"log"
 	"net/http"
@@ -141,6 +142,15 @@ func RbacMiddleware(role string) gin.HandlerFunc {
 			c.Abort()
 			return
 		}
+
+		c.Next()
+	}
+}
+
+func TraceMiddleware() gin.HandlerFunc {
+	return func(c *gin.Context) {
+		u := uuid.New().String()
+		c.Set("traceId", u)
 
 		c.Next()
 	}
