@@ -8,6 +8,7 @@ import (
 	"github.com/swaggo/gin-swagger"
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
+	"gorm.io/gorm/schema"
 	"net/http"
 	"os"
 	"sync/atomic"
@@ -178,7 +179,11 @@ func NewCrudApplication(publicRoutes []string) (*Application, error) {
 		os.Getenv("DB_PORT"),
 	)
 
-	db, err := gorm.Open(postgres.Open(dsn), &gorm.Config{})
+	db, err := gorm.Open(postgres.Open(dsn), &gorm.Config{
+		NamingStrategy: schema.NamingStrategy{
+			NoLowerCase: true,
+		},
+	})
 
 	r := gin.Default()
 	r.Use(sdk.CorsMiddleware())
