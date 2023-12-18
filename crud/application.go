@@ -9,6 +9,7 @@ import (
 	"github.com/swaggo/gin-swagger"
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
+	"gorm.io/gorm/schema"
 	"net/http"
 	"os"
 	"sync/atomic"
@@ -43,7 +44,7 @@ type CrudModel interface {
 	List(db *gorm.DB, request ListRequest, params ...FilterParams) (interface{}, int64, error)
 	GetFilterParams(c *gin.Context) []FilterParams
 	Create(db *gorm.DB) (interface{}, error)
-	Update(db *gorm.DB) (interface{}, error)
+	Update(db *gorm.DB, key string) (interface{}, error)
 	DecodeCreate(c *gin.Context) (interface{}, error)
 	Delete(db *gorm.DB, key string) bool
 	Get(db *gorm.DB, key string) (interface{}, error)
@@ -57,8 +58,8 @@ func (u BaseCrudModel) GetFilterParams(c *gin.Context) []FilterParams {
 	return p
 }
 
-func (u BaseCrudModel) DecodeCreate(c *gin.Context) interface{} {
-	return c.Bind(u)
+func (u BaseCrudModel) DecodeCreate(c *gin.Context) (interface{}, error) {
+	return c.Bind(u), nil
 }
 
 func (a Application) AppendListEndpoint(prefix string, entity CrudModel, middlewares ...gin.HandlerFunc) {
@@ -115,14 +116,14 @@ func (a Application) AppendCreateEndpoint(prefix string, entity CrudModel, middl
 }
 
 func (a Application) AppendUpdateEndpoint(prefix string, entity CrudModel, middlewares ...gin.HandlerFunc) {
-	a.Router.PATCH(prefix, func(c *gin.Context) {
+	a.Router.PUT(prefix, func(c *gin.Context) {
 
 		for _, middleware := range middlewares {
 			middleware(c)
 		}
 
 		decode, _ := entity.DecodeCreate(c)
-		m, err := decode.(CrudModel).Update(a.Db)
+		m, err := decode.(CrudModel).Update(a.Db, c.Param("id"))
 
 		c.JSON(200, gin.H{"data": m, "error": err})
 		return
@@ -183,7 +184,11 @@ func NewCrudApplication(publicRoutes []string) (*Application, error) {
 		os.Getenv("DB_PORT"),
 	)
 
-	db, err := gorm.Open(postgres.Open(dsn), &gorm.Config{Logger: logger.GetGormLogger()})
+	db, err := gorm.Open(postgres.Open(dsn), &gorm.Config{
+		NamingStrategy: schema.NamingStrategy{
+			NoLowerCase: true,
+		},
+	})
 
 	r := gin.Default()
 	r.Use(sdk.TraceMiddleware())
