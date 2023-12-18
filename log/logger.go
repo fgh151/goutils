@@ -2,7 +2,6 @@ package log
 
 import (
 	"github.com/Graylog2/go-gelf/gelf"
-	sloggraylog "github.com/samber/slog-graylog/v2"
 	"gorm.io/gorm/logger"
 	"io"
 	"log"
@@ -19,14 +18,20 @@ func NewAppLogger() *AppLogger {
 		log.Print("Cant init logger " + err.Error())
 	}
 
-	l := AppLogger{
-		logger: slog.New(sloggraylog.Option{Level: slog.LevelDebug, Writer: gelfWriter}.NewGraylogHandler()),
-		writer: gelfWriter,
+	handler, err := Option{Level: slog.LevelDebug, Writer: gelfWriter}.NewGraylogHandler()
+
+	if err != nil {
+		l := AppLogger{
+			logger: slog.New(handler),
+			writer: gelfWriter,
+		}
+
+		log.SetOutput(io.MultiWriter(os.Stderr, gelfWriter))
+
+		return &l
 	}
 
-	log.SetOutput(io.MultiWriter(os.Stderr, gelfWriter))
-
-	return &l
+	return &AppLogger{}
 }
 
 type AppLogger struct {

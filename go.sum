@@ -229,8 +229,6 @@ github.com/samber/lo v1.38.1 h1:j2XEAqXKb09Am4ebOg31SpvzUTTs6EN3VfgeLUhPdXM=
 github.com/samber/lo v1.38.1/go.mod h1:+m/ZKRl6ClXCE2Lgf3MsQlWfh4bn1bz6CXEOxnEXnEA=
 github.com/samber/slog-common v0.11.0 h1:JdESCaXcEwdtoTCYHKQFfHGbWN2vZJq0DDGEE/lwTUQ=
 github.com/samber/slog-common v0.11.0/go.mod h1:Qjrfhwk79XiCIhBj8+jTq1Cr0u9rlWbjawh3dWXzaHk=
-github.com/samber/slog-graylog/v2 v2.1.0 h1:rTZ4TTI7WDEaNGj0hLd8Yid/X/GkvyR/2jeHMojT4Do=
-github.com/samber/slog-graylog/v2 v2.1.0/go.mod h1:pDDj6KTE/9ZcBp9sK6ZmVfX73aBcywBU1LotbvEsL8Y=
 github.com/sirupsen/logrus v1.2.0/go.mod h1:LxeOpSwHxABJmUn/MG1IvRgCAasNZTLOkJPxbbu5VWo=
 github.com/sirupsen/logrus v1.4.2/go.mod h1:tLMulIdttU9McNUspp0xgXVQah82FyeX6MwdIuYE2rE=
 github.com/sirupsen/logrus v1.6.0/go.mod h1:7uNnSEd1DgxDLC74fIahvMZmmYsHGZGEOFrfsX/uA88=
@@ -428,8 +426,6 @@ google.golang.org/protobuf v1.26.0/go.mod h1:9q0QmTI4eRPtz6boOQmLYwt+qCgq0jsYwAQ
 google.golang.org/protobuf v1.27.1/go.mod h1:9q0QmTI4eRPtz6boOQmLYwt+qCgq0jsYwAQnmE0givc=
 google.golang.org/protobuf v1.30.0 h1:kPPoIgf3TsEvrm0PFe15JQ+570QVxYzEvvHqChK+cng=
 google.golang.org/protobuf v1.30.0/go.mod h1:HV8QOd/L58Z+nl8r43ehVNZIU/HEI6OcFqwMG9pJV4I=
-gopkg.in/Graylog2/go-gelf.v2 v2.0.0-20191017102106-1550ee647df0 h1:Xg23ydYYJLmb9AK3XdcEpplHZd1MpN3X2ZeeMoBClmY=
-gopkg.in/Graylog2/go-gelf.v2 v2.0.0-20191017102106-1550ee647df0/go.mod h1:CeDeqW4tj9FrgZXF/dQCWZrBdcZWWBenhJtxLH4On2g=
 gopkg.in/alecthomas/kingpin.v2 v2.2.6/go.mod h1:FMv+mEhP44yOT+4EoQTLFTRgOQ1FBLkstjWtayDeSgw=
 gopkg.in/check.v1 v0.0.0-20161208181325-20d25e280405/go.mod h1:Co6ibVJAznAaIkqp8huTwlJQCZ016jof/cbN4VW5Yz0=
 gopkg.in/check.v1 v1.0.0-20180628173108-788fd7840127/go.mod h1:Co6ibVJAznAaIkqp8huTwlJQCZ016jof/cbN4VW5Yz0=
