@@ -74,6 +74,7 @@ func AccountMiddleware(whiteList []string) gin.HandlerFunc {
 		q.Add("ApiKey", key)
 		q.Add("Hash", hash)
 		q.Add("Time", time)
+		q.Add("Origin", c.Request.Header.Get("Origin"))
 		req.URL.RawQuery = q.Encode()
 
 		res, err := http.DefaultClient.Do(req)
