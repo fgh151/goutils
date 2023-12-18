@@ -196,25 +196,28 @@ func NewCrudApplication(publicRoutes []string) (*Application, error) {
 	r.Use(sdk.JsonMiddleware())
 	r.Use(sdk.DbMiddleware(db))
 	r.Use(sdk.AccountMiddleware(publicRoutes))
-	r.Use(gin.LoggerWithConfig(gin.LoggerConfig{
-		Formatter: func(param gin.LogFormatterParams) string {
-			return fmt.Sprintf("%s - [%s] %s %s %s %d %s \"%s\" %s %s\n ",
-				param.ClientIP,
-				param.TimeStamp.Format(time.RFC1123),
-				param.Method,
-				param.Path,
-				param.Request.Proto,
-				param.StatusCode,
-				param.Latency,
-				param.Request.UserAgent(),
-				param.ErrorMessage,
-				param.Keys["traceId"],
-			)
-		},
-		Output:    logger.Writer(),
-		SkipPaths: []string{},
-	}))
-	r.Use(gin.Recovery())
+
+	if logger.Inner == false {
+		r.Use(gin.LoggerWithConfig(gin.LoggerConfig{
+			Formatter: func(param gin.LogFormatterParams) string {
+				return fmt.Sprintf("%s - [%s] %s %s %s %d %s \"%s\" %s %s\n ",
+					param.ClientIP,
+					param.TimeStamp.Format(time.RFC1123),
+					param.Method,
+					param.Path,
+					param.Request.Proto,
+					param.StatusCode,
+					param.Latency,
+					param.Request.UserAgent(),
+					param.ErrorMessage,
+					param.Keys["traceId"],
+				)
+			},
+			Output:    logger.Writer(),
+			SkipPaths: []string{},
+		}))
+		r.Use(gin.Recovery())
+	}
 
 	return &Application{
 		Router: r,

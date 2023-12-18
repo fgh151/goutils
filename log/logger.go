@@ -24,6 +24,7 @@ func NewAppLogger() *AppLogger {
 		l := AppLogger{
 			logger: slog.New(handler),
 			writer: gelfWriter,
+			Inner:  false,
 		}
 
 		log.SetOutput(io.MultiWriter(os.Stderr, gelfWriter))
@@ -31,12 +32,13 @@ func NewAppLogger() *AppLogger {
 		return &l
 	}
 
-	return &AppLogger{}
+	return &AppLogger{Inner: true}
 }
 
 type AppLogger struct {
 	logger *slog.Logger
 	writer *gelf.Writer
+	Inner  bool
 }
 
 func (l *AppLogger) Writer() *gelf.Writer {
