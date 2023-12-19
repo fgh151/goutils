@@ -1,8 +1,11 @@
 package crud
 
 import (
+	"context"
 	"fmt"
+	"github.com/bradfitz/gomemcache/memcache"
 	"github.com/gin-gonic/gin"
+	"github.com/rgglez/gormcache"
 	"github.com/runetid/go-sdk"
 	"github.com/runetid/go-sdk/log"
 	"github.com/swaggo/files"
@@ -189,6 +192,17 @@ func NewCrudApplication(publicRoutes []string) (*Application, error) {
 			NoLowerCase: true,
 		},
 	})
+
+	mdb := memcache.New(os.Getenv("CACHE_SRV"))
+	cache := gormcache.NewGormCache("my_cache", gormcache.NewMemcacheClient(mdb), gormcache.CacheConfig{
+		TTL:    600 * time.Second,
+		Prefix: "cache:",
+	})
+
+	err = db.Use(cache)
+	if err == nil {
+		db.Session(&gorm.Session{Context: context.WithValue(context.Background(), gormcache.UseCacheKey, true)})
+	}
 
 	r := gin.Default()
 	r.Use(sdk.TraceMiddleware())
