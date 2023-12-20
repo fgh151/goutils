@@ -1,9 +1,12 @@
 package sdk
 
 import (
+	"encoding/json"
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
+	"github.com/runetid/go-sdk/models"
 	"gorm.io/gorm"
+	"io"
 	"log"
 	"net/http"
 	"os"
@@ -94,6 +97,16 @@ func AccountMiddleware(whiteList []string) gin.HandlerFunc {
 			doNext = false
 			return
 		}
+
+		defer res.Body.Close()
+		body, err := io.ReadAll(res.Body)
+		var response models.ApiAccountResponse
+		if err := json.Unmarshal(body, &response); err != nil { // Parse []byte to go struct pointer
+			log.Println("Can not unmarshal JSON")
+		}
+
+		c.Set("event_id", response.Data.EventId)
+		c.Set("role", response.Data.Role)
 
 		if doNext {
 			c.Next()
