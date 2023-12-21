@@ -98,6 +98,10 @@ func (a Application) AppendListEndpoint(prefix string, entity CrudModel, middlew
 
 		m, cnt, err = entity.List(a.Db, request, entity.GetFilterParams(c)...)
 
+		if m == nil {
+			m = make([]string, 0)
+		}
+
 		c.JSON(200, gin.H{"data": m, "error": err, "total": cnt})
 		return
 	})
