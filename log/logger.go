@@ -12,24 +12,28 @@ import (
 
 func NewAppLogger() *AppLogger {
 	addr := os.Getenv("LOG_CHANNEL")
-	gelfWriter, err := gelf.NewWriter(addr)
 
-	if err != nil {
-		log.Print("Cant init logger " + err.Error())
-	}
+	if addr != "" {
 
-	handler, err := Option{Level: slog.LevelDebug, Writer: gelfWriter}.NewGraylogHandler()
+		gelfWriter, err := gelf.NewWriter(addr)
 
-	if err != nil {
-		l := AppLogger{
-			logger: slog.New(handler),
-			writer: gelfWriter,
-			Inner:  false,
+		if err != nil {
+			log.Print("Cant init logger " + err.Error())
 		}
 
-		log.SetOutput(io.MultiWriter(os.Stderr, gelfWriter))
+		handler, err := Option{Level: slog.LevelDebug, Writer: gelfWriter}.NewGraylogHandler()
 
-		return &l
+		if err != nil {
+			l := AppLogger{
+				logger: slog.New(handler),
+				writer: gelfWriter,
+				Inner:  false,
+			}
+
+			log.SetOutput(io.MultiWriter(os.Stderr, gelfWriter))
+
+			return &l
+		}
 	}
 
 	return &AppLogger{Inner: true}
