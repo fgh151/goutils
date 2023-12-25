@@ -5,5 +5,5 @@ type ApiAccountResponse struct {
 	Data    struct {
 		Role    string `json:"role"`
 		EventId string `json:"event_id"`
-	}
+	} `json:"data"`
 }
