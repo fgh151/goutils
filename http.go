@@ -102,11 +102,11 @@ func AccountMiddleware(whiteList []string) gin.HandlerFunc {
 		body, err := io.ReadAll(res.Body)
 		var response models.ApiAccountResponse
 		if err := json.Unmarshal(body, &response); err != nil { // Parse []byte to go struct pointer
-			log.Println("Can not unmarshal api account response")
+			log.Println("Can not unmarshal api account response " + string(body))
+		} else {
+			c.Set("event_id", response.Data.EventId)
+			c.Set("role", response.Data.Role)
 		}
-
-		c.Set("event_id", response.Data.EventId)
-		c.Set("role", response.Data.Role)
 
 		if doNext {
 			c.Next()
