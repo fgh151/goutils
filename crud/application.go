@@ -178,6 +178,10 @@ func (a Application) AppendSwagger(prefix string) {
 	a.Router.GET(prefix+"/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
 }
 
+func (a Application) Schedule(ctx context.Context, p time.Duration, f func(time time.Time)) {
+	go Schedule(ctx, p, f)
+}
+
 func NewCrudApplication(publicRoutes []string) (*Application, error) {
 
 	logger := log.NewAppLogger()
