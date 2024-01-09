@@ -72,6 +72,10 @@ func (a Application) AppendListEndpoint(prefix string, entity CrudModel, middlew
 			middleware(c)
 		}
 
+		if len(c.Errors) > 0 {
+			return
+		}
+
 		var request ListRequest
 		err := c.Bind(&request)
 		if err != nil {
@@ -114,6 +118,10 @@ func (a Application) AppendCreateEndpoint(prefix string, entity CrudModel, middl
 			middleware(c)
 		}
 
+		if len(c.Errors) > 0 {
+			return
+		}
+
 		decode, _ := entity.DecodeCreate(c)
 		m, err := decode.(CrudModel).Create(a.Db)
 
@@ -129,6 +137,10 @@ func (a Application) AppendUpdateEndpoint(prefix string, entity CrudModel, middl
 			middleware(c)
 		}
 
+		if len(c.Errors) > 0 {
+			return
+		}
+
 		decode, _ := entity.DecodeCreate(c)
 		m, err := decode.(CrudModel).Update(a.Db, c.Param("id"))
 
@@ -142,6 +154,10 @@ func (a Application) AppendDeleteEndpoint(prefix string, entity CrudModel, middl
 
 		for _, middleware := range middlewares {
 			middleware(c)
+		}
+
+		if len(c.Errors) > 0 {
+			return
 		}
 
 		if entity.Delete(a.Db, c.Param("id")) {
@@ -160,6 +176,10 @@ func (a Application) AppendGetEndpoint(prefix string, entity CrudModel, middlewa
 
 		for _, middleware := range middlewares {
 			middleware(c)
+		}
+
+		if len(c.Errors) > 0 {
+			return
 		}
 
 		model, err := entity.Get(a.Db, c.Param("id"))
