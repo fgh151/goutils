@@ -8,7 +8,9 @@ import (
 	"gorm.io/gorm"
 	"io"
 	"log"
+	"net"
 	"net/http"
+	"net/netip"
 	"os"
 	"regexp"
 	"strings"
@@ -49,6 +51,27 @@ func AccountMiddleware(whiteList []string) gin.HandlerFunc {
 	wl := append([]string{"/metrics", "/healthz", "/readyz"}, whiteList...)
 
 	return func(c *gin.Context) {
+
+		addrs, err := net.InterfaceAddrs()
+		if err == nil {
+			for _, a := range addrs {
+				network, err := netip.ParsePrefix(a.String())
+				if err != nil {
+					break
+				}
+
+				ip, err := netip.ParseAddr(c.ClientIP())
+				if err != nil {
+					break
+				}
+
+				sign := network.Contains(ip)
+				if sign == true {
+					c.Next()
+					return
+				}
+			}
+		}
 
 		for _, s := range wl {
 			if ok, _ := regexp.MatchString(s, c.Request.URL.Path); ok {
