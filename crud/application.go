@@ -122,10 +122,18 @@ func (a Application) AppendCreateEndpoint(prefix string, entity CrudModel, middl
 			return
 		}
 
-		decode, _ := entity.DecodeCreate(c)
-		m, err := decode.(CrudModel).Create(a.Db)
+		decode, err := entity.DecodeCreate(c)
+		if err != nil {
+			c.JSON(http.StatusUnprocessableEntity, gin.H{"error": err})
+			return
+		}
 
-		c.JSON(200, gin.H{"data": m, "error": err})
+		m, err := decode.(CrudModel).Create(a.Db)
+		if err != nil {
+			return
+		}
+
+		c.JSON(http.StatusOK, gin.H{"data": m, "error": err})
 		return
 	})
 }
