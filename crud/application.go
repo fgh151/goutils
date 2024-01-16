@@ -130,10 +130,11 @@ func (a Application) AppendCreateEndpoint(prefix string, entity CrudModel, middl
 
 		m, err := decode.(CrudModel).Create(a.Db)
 		if err != nil {
+			c.JSON(http.StatusUnprocessableEntity, gin.H{"error": err.Error()})
 			return
 		}
 
-		c.JSON(http.StatusOK, gin.H{"data": m, "error": err})
+		c.JSON(http.StatusOK, gin.H{"data": m})
 		return
 	})
 }
@@ -149,10 +150,19 @@ func (a Application) AppendUpdateEndpoint(prefix string, entity CrudModel, middl
 			return
 		}
 
-		decode, _ := entity.DecodeCreate(c)
-		m, err := decode.(CrudModel).Update(a.Db, c.Param("id"))
+		decode, err := entity.DecodeCreate(c)
+		if err != nil {
+			c.JSON(http.StatusUnprocessableEntity, gin.H{"error": err.Error()})
+			return
+		}
 
-		c.JSON(200, gin.H{"data": m, "error": err})
+		m, err := decode.(CrudModel).Update(a.Db, c.Param("id"))
+		if err != nil {
+			c.JSON(http.StatusUnprocessableEntity, gin.H{"error": err.Error()})
+			return
+		}
+
+		c.JSON(http.StatusOK, gin.H{"data": m})
 		return
 	})
 }
@@ -169,7 +179,6 @@ func (a Application) AppendDeleteEndpoint(prefix string, entity CrudModel, middl
 		}
 
 		if entity.Delete(a.Db, c.Param("id")) {
-
 			c.JSON(http.StatusOK, gin.H{"message": "ok"})
 			return
 		}
