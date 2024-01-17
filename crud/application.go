@@ -12,7 +12,6 @@ import (
 	"github.com/swaggo/gin-swagger"
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
-	"gorm.io/gorm/schema"
 	"net/http"
 	"os"
 	"sync/atomic"
@@ -232,11 +231,7 @@ func NewCrudApplication(publicRoutes []string) (*Application, error) {
 		os.Getenv("DB_PORT"),
 	)
 
-	db, err := gorm.Open(postgres.Open(dsn), &gorm.Config{
-		NamingStrategy: schema.NamingStrategy{
-			NoLowerCase: true,
-		},
-	})
+	db, err := gorm.Open(postgres.Open(dsn), &gorm.Config{})
 
 	mdb := memcache.New(os.Getenv("CACHE_SRV"))
 	cache := gormcache.NewGormCache("my_cache", gormcache.NewMemcacheClient(mdb), gormcache.CacheConfig{
