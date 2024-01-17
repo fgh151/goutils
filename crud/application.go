@@ -12,7 +12,6 @@ import (
 	"github.com/swaggo/gin-swagger"
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
-	"gorm.io/gorm/schema"
 	"net/http"
 	"os"
 	"sync/atomic"
@@ -122,10 +121,19 @@ func (a Application) AppendCreateEndpoint(prefix string, entity CrudModel, middl
 			return
 		}
 
-		decode, _ := entity.DecodeCreate(c)
-		m, err := decode.(CrudModel).Create(a.Db)
+		decode, err := entity.DecodeCreate(c)
+		if err != nil {
+			c.JSON(http.StatusUnprocessableEntity, gin.H{"error": err.Error()})
+			return
+		}
 
-		c.JSON(200, gin.H{"data": m, "error": err})
+		m, err := decode.(CrudModel).Create(a.Db)
+		if err != nil {
+			c.JSON(http.StatusUnprocessableEntity, gin.H{"error": err.Error()})
+			return
+		}
+
+		c.JSON(http.StatusOK, gin.H{"data": m})
 		return
 	})
 }
@@ -141,10 +149,19 @@ func (a Application) AppendUpdateEndpoint(prefix string, entity CrudModel, middl
 			return
 		}
 
-		decode, _ := entity.DecodeCreate(c)
-		m, err := decode.(CrudModel).Update(a.Db, c.Param("id"))
+		decode, err := entity.DecodeCreate(c)
+		if err != nil {
+			c.JSON(http.StatusUnprocessableEntity, gin.H{"error": err.Error()})
+			return
+		}
 
-		c.JSON(200, gin.H{"data": m, "error": err})
+		m, err := decode.(CrudModel).Update(a.Db, c.Param("id"))
+		if err != nil {
+			c.JSON(http.StatusUnprocessableEntity, gin.H{"error": err.Error()})
+			return
+		}
+
+		c.JSON(http.StatusOK, gin.H{"data": m})
 		return
 	})
 }
@@ -161,7 +178,6 @@ func (a Application) AppendDeleteEndpoint(prefix string, entity CrudModel, middl
 		}
 
 		if entity.Delete(a.Db, c.Param("id")) {
-
 			c.JSON(http.StatusOK, gin.H{"message": "ok"})
 			return
 		}
@@ -215,11 +231,7 @@ func NewCrudApplication(publicRoutes []string) (*Application, error) {
 		os.Getenv("DB_PORT"),
 	)
 
-	db, err := gorm.Open(postgres.Open(dsn), &gorm.Config{
-		NamingStrategy: schema.NamingStrategy{
-			NoLowerCase: true,
-		},
-	})
+	db, err := gorm.Open(postgres.Open(dsn), &gorm.Config{})
 
 	mdb := memcache.New(os.Getenv("CACHE_SRV"))
 	cache := gormcache.NewGormCache("my_cache", gormcache.NewMemcacheClient(mdb), gormcache.CacheConfig{
