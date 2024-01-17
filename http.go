@@ -10,6 +10,7 @@ import (
 	"log"
 	"net"
 	"net/http"
+	"net/http/httputil"
 	"net/netip"
 	"os"
 	"regexp"
@@ -191,4 +192,39 @@ func TraceMiddleware() gin.HandlerFunc {
 
 		c.Next()
 	}
+}
+
+func UserMiddleware() gin.HandlerFunc {
+	return func(c *gin.Context) {
+
+		token := c.Request.Header.Get("Authorization")
+
+		if token != "" {
+			c.Set("token", token)
+			u, err := FetchInternal(os.Getenv("DNS_USER") + "/user/byToken/" + token)
+
+			if err == nil {
+				c.Set("user", u)
+			}
+		}
+
+		c.Next()
+	}
+}
+
+func FetchInternal(url string) (interface{}, error) {
+	client := http.Client{}
+
+	resp, err := client.Get(url)
+	defer resp.Body.Close()
+	if err != nil {
+		return nil, err
+	}
+
+	b, err := httputil.DumpResponse(resp, true)
+	if err != nil {
+		return nil, err
+	}
+
+	return string(b), nil
 }
