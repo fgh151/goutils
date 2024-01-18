@@ -15,6 +15,7 @@ import (
 	"github.com/swaggo/gin-swagger"
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
+	log2 "log"
 	"net/http"
 	"os"
 	"sync/atomic"
@@ -25,6 +26,12 @@ type Application struct {
 	Router *gin.Engine
 	Db     *gorm.DB
 	Logger *log.AppLogger
+}
+
+type ApplicationConfig struct {
+	PublicRoutes     []string
+	DbMigrationsPath string
+	DbSchema         string
 }
 
 func (a Application) Run() {
@@ -221,7 +228,7 @@ func (a Application) Schedule(ctx context.Context, p time.Duration, f func(time 
 	go Schedule(ctx, p, f)
 }
 
-func NewCrudApplication(publicRoutes []string, migrationsPath string) (*Application, error) {
+func NewCrudApplication(config ApplicationConfig) (*Application, error) {
 
 	logger := log.NewAppLogger()
 
@@ -248,12 +255,18 @@ func NewCrudApplication(publicRoutes []string, migrationsPath string) (*Applicat
 	}
 
 	m, merr := migrate.New(
-		fmt.Sprintf("github://%s:%s@%s", os.Getenv("GH_LOGIN"), os.Getenv("GH_TOKEN"), migrationsPath),
-		fmt.Sprintf("postgres://%s:%s@%s:%s/%s?sslmode=disable", os.Getenv("DB_USER"), os.Getenv("DB_PASSWORD"), os.Getenv("DB_HOST"), os.Getenv("DB_PORT"), os.Getenv("DB_NAME")),
+		fmt.Sprintf("github://%s:%s@%s", os.Getenv("GH_LOGIN"), os.Getenv("GH_TOKEN"), config.DbMigrationsPath),
+		fmt.Sprintf("postgres://%s:%s@%s:%s/%s?search_path=%s&sslmode=disable", os.Getenv("DB_USER"), os.Getenv("DB_PASSWORD"), os.Getenv("DB_HOST"), os.Getenv("DB_PORT"), os.Getenv("DB_NAME"), config.DbSchema),
 	)
 
 	if merr == nil {
-		m.Up()
+		ee := m.Up()
+
+		if ee != nil {
+			log2.Fatal(ee)
+		}
+	} else {
+		log2.Fatal(merr)
 	}
 
 	r := gin.Default()
@@ -262,7 +275,7 @@ func NewCrudApplication(publicRoutes []string, migrationsPath string) (*Applicat
 	r.Use(sdk.CorsMiddleware())
 	r.Use(sdk.JsonMiddleware())
 	r.Use(sdk.DbMiddleware(db))
-	r.Use(sdk.AccountMiddleware(publicRoutes))
+	r.Use(sdk.AccountMiddleware(config.PublicRoutes))
 
 	if logger.Inner == false {
 		r.Use(gin.LoggerWithConfig(gin.LoggerConfig{
