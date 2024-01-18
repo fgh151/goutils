@@ -269,11 +269,7 @@ func NewCrudApplicationWithConfig(config ApplicationConfig) (*Application, error
 		)
 
 		if merr == nil {
-			ee := m.Up()
-
-			if ee != nil {
-				log2.Fatal(ee)
-			}
+			m.Up()
 		} else {
 			log2.Fatal(merr)
 		}
