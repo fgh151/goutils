@@ -254,19 +254,21 @@ func NewCrudApplication(config ApplicationConfig) (*Application, error) {
 		db.Session(&gorm.Session{Context: context.WithValue(context.Background(), gormcache.UseCacheKey, true)})
 	}
 
-	m, merr := migrate.New(
-		fmt.Sprintf("github://%s:%s@%s", os.Getenv("GH_LOGIN"), os.Getenv("GH_TOKEN"), config.DbMigrationsPath),
-		fmt.Sprintf("postgres://%s:%s@%s:%s/%s?search_path=%s&sslmode=disable", os.Getenv("DB_USER"), os.Getenv("DB_PASSWORD"), os.Getenv("DB_HOST"), os.Getenv("DB_PORT"), os.Getenv("DB_NAME"), config.DbSchema),
-	)
+	if config.DbMigrationsPath != "" {
+		m, merr := migrate.New(
+			fmt.Sprintf("github://%s:%s@%s", os.Getenv("GH_LOGIN"), os.Getenv("GH_TOKEN"), config.DbMigrationsPath),
+			fmt.Sprintf("postgres://%s:%s@%s:%s/%s?search_path=%s&sslmode=disable", os.Getenv("DB_USER"), os.Getenv("DB_PASSWORD"), os.Getenv("DB_HOST"), os.Getenv("DB_PORT"), os.Getenv("DB_NAME"), config.DbSchema),
+		)
 
-	if merr == nil {
-		ee := m.Up()
+		if merr == nil {
+			ee := m.Up()
 
-		if ee != nil {
-			log2.Fatal(ee)
+			if ee != nil {
+				log2.Fatal(ee)
+			}
+		} else {
+			log2.Fatal(merr)
 		}
-	} else {
-		log2.Fatal(merr)
 	}
 
 	r := gin.Default()
