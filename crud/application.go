@@ -291,6 +291,6 @@ type ListRequest struct {
 
 type FilterParams struct {
 	Key      string
-	Value    string
+	Value    interface{}
 	Operator string
 }
