@@ -245,6 +245,7 @@ func NewCrudApplication(publicRoutes []string) (*Application, error) {
 	}
 
 	r := gin.Default()
+	r.Use(sdk.UserMiddleware())
 	r.Use(sdk.TraceMiddleware())
 	r.Use(sdk.CorsMiddleware())
 	r.Use(sdk.JsonMiddleware())
