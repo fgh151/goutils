@@ -198,13 +198,19 @@ func UserMiddleware() gin.HandlerFunc {
 	return func(c *gin.Context) {
 
 		token := c.Request.Header.Get("Authorization")
+		splitToken := strings.Split(token, "Bearer ")
 
-		if token != "" {
-			c.Set("token", token)
-			u, err := FetchInternal(os.Getenv("DNS_USER") + "/user/byToken/" + token)
+		if len(splitToken) > 0 {
 
-			if err == nil {
-				c.Set("user", u)
+			token = splitToken[1]
+
+			if token != "" {
+				c.Set("token", token)
+				u, err := FetchInternal(os.Getenv("DNS_USER") + "/user/byToken/" + token)
+
+				if err == nil {
+					c.Set("user", u)
+				}
 			}
 		}
 
