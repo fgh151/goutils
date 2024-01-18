@@ -228,7 +228,15 @@ func (a Application) Schedule(ctx context.Context, p time.Duration, f func(time 
 	go Schedule(ctx, p, f)
 }
 
-func NewCrudApplication(config ApplicationConfig) (*Application, error) {
+func NewCrudApplication(publicRoutes []string) (*Application, error) {
+	return NewCrudApplicationWithConfig(ApplicationConfig{
+		PublicRoutes:     publicRoutes,
+		DbMigrationsPath: "",
+		DbSchema:         "public",
+	})
+}
+
+func NewCrudApplicationWithConfig(config ApplicationConfig) (*Application, error) {
 
 	logger := log.NewAppLogger()
 
