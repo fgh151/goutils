@@ -200,7 +200,7 @@ func UserMiddleware() gin.HandlerFunc {
 		token := c.Request.Header.Get("Authorization")
 		splitToken := strings.Split(token, "Bearer ")
 
-		if len(splitToken) > 0 {
+		if len(splitToken) > 1 {
 
 			token = splitToken[1]
 
