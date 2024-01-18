@@ -5,6 +5,9 @@ import (
 	"fmt"
 	"github.com/bradfitz/gomemcache/memcache"
 	"github.com/gin-gonic/gin"
+	"github.com/golang-migrate/migrate/v4"
+	_ "github.com/golang-migrate/migrate/v4/database/postgres"
+	_ "github.com/golang-migrate/migrate/v4/source/github"
 	"github.com/rgglez/gormcache"
 	"github.com/runetid/go-sdk"
 	"github.com/runetid/go-sdk/log"
@@ -218,7 +221,7 @@ func (a Application) Schedule(ctx context.Context, p time.Duration, f func(time 
 	go Schedule(ctx, p, f)
 }
 
-func NewCrudApplication(publicRoutes []string) (*Application, error) {
+func NewCrudApplication(publicRoutes []string, migrationsPath string) (*Application, error) {
 
 	logger := log.NewAppLogger()
 
@@ -242,6 +245,15 @@ func NewCrudApplication(publicRoutes []string) (*Application, error) {
 	err = db.Use(cache)
 	if err == nil {
 		db.Session(&gorm.Session{Context: context.WithValue(context.Background(), gormcache.UseCacheKey, true)})
+	}
+
+	m, merr := migrate.New(
+		fmt.Sprintf("github://%s:%s@%s", os.Getenv("GH_LOGIN"), os.Getenv("GH_TOKEN"), migrationsPath),
+		fmt.Sprintf("postgres://%s:%s@%s:%s/%s?sslmode=disable", os.Getenv("DB_USER"), os.Getenv("DB_PASSWORD"), os.Getenv("DB_HOST"), os.Getenv("DB_PORT"), os.Getenv("DB_NAME")),
+	)
+
+	if merr == nil {
+		m.Up()
 	}
 
 	r := gin.Default()
