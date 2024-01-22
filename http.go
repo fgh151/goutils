@@ -11,7 +11,6 @@ import (
 	"net"
 	"net/http"
 	"net/http/httputil"
-	"net/netip"
 	"os"
 	"regexp"
 	"strings"
@@ -47,6 +46,10 @@ func DbMiddleware(db *gorm.DB) gin.HandlerFunc {
 	}
 }
 
+func intersect(n1, n2 *net.IPNet) bool {
+	return n2.Contains(n1.IP) || n1.Contains(n2.IP)
+}
+
 func AccountMiddleware(whiteList []string) gin.HandlerFunc {
 
 	wl := append([]string{"/metrics", "/healthz", "/readyz"}, whiteList...)
@@ -54,20 +57,12 @@ func AccountMiddleware(whiteList []string) gin.HandlerFunc {
 	return func(c *gin.Context) {
 
 		addrs, err := net.InterfaceAddrs()
+		_, remoteCIDR, err := net.ParseCIDR(c.ClientIP() + "/24")
 		if err == nil {
+
 			for _, a := range addrs {
-				network, err := netip.ParsePrefix(a.String())
-				if err != nil {
-					break
-				}
-
-				ip, err := netip.ParseAddr(c.ClientIP())
-				if err != nil {
-					break
-				}
-
-				sign := network.Contains(ip)
-				if sign == true {
+				_, localCIDR, _ := net.ParseCIDR(a.String() + "/24")
+				if intersect(localCIDR, remoteCIDR) {
 					c.Next()
 					return
 				}
