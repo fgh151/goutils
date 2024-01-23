@@ -61,8 +61,8 @@ func AccountMiddleware(whiteList []string) gin.HandlerFunc {
 		if err == nil {
 
 			for _, a := range addrs {
-				_, localCIDR, _ := net.ParseCIDR(a.String() + "/24")
-				if intersect(localCIDR, remoteCIDR) {
+				_, localCIDR, pe := net.ParseCIDR(a.String() + "/24")
+				if pe == nil && intersect(localCIDR, remoteCIDR) {
 					c.Next()
 					return
 				}
