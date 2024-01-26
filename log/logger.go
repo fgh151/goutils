@@ -23,7 +23,7 @@ func NewAppLogger() *AppLogger {
 
 		handler, err := Option{Level: slog.LevelDebug, Writer: gelfWriter}.NewGraylogHandler()
 
-		if err != nil {
+		if err == nil {
 			l := AppLogger{
 				logger: slog.New(handler),
 				writer: gelfWriter,
