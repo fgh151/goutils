@@ -2,11 +2,13 @@ package crud
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"github.com/bradfitz/gomemcache/memcache"
 	"github.com/gin-gonic/gin"
 	"github.com/golang-migrate/migrate/v4"
 	_ "github.com/golang-migrate/migrate/v4/database/postgres"
+	postgres2 "github.com/golang-migrate/migrate/v4/database/postgres"
 	_ "github.com/golang-migrate/migrate/v4/source/github"
 	"github.com/rgglez/gormcache"
 	"github.com/runetid/go-sdk"
@@ -272,7 +274,9 @@ func NewCrudApplicationWithConfig(config ApplicationConfig) (*Application, error
 			e := m.Up()
 			log2.Println(e)
 		} else {
-			log2.Fatal(merr)
+			if !errors.Is(merr, postgres2.ErrNoSchema) {
+				log2.Fatal(merr)
+			}
 		}
 	}
 
