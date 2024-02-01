@@ -67,6 +67,8 @@ type CrudModel interface {
 type BaseCrudModel struct {
 }
 
+var ctx = context.Background()
+
 func (u BaseCrudModel) GetFilterParams(c *gin.Context) []FilterParams {
 	var p []FilterParams
 	return p
@@ -124,6 +126,7 @@ func (a Application) AppendListEndpoint(prefix string, entity CrudModel, middlew
 
 func (a Application) AppendCreateEndpoint(prefix string, entity CrudModel, middlewares ...gin.HandlerFunc) {
 	a.Router.POST(prefix, func(c *gin.Context) {
+		ctx = c
 
 		for _, middleware := range middlewares {
 			middleware(c)
