@@ -133,6 +133,19 @@ func AccountMiddleware(whiteList []string) gin.HandlerFunc {
 	}
 }
 
+func AdminOnlyMiddleware() gin.HandlerFunc {
+	return func(c *gin.Context) {
+		role, exist := c.Get("role")
+
+		if exist == false || role != "admin" {
+			c.JSON(http.StatusUnauthorized, gin.H{"message": "admin only method"})
+			c.Writer.WriteHeaderNow()
+			c.Abort()
+			return
+		}
+	}
+}
+
 func RbacMiddleware(role string) gin.HandlerFunc {
 	return func(c *gin.Context) {
 
