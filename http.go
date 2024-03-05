@@ -256,10 +256,10 @@ func PrepareUploadStorage(entity string, entityId int, file *multipart.FileHeade
 	return data, nil
 }
 
-func GetLastFile() (interface{}, error) {
+func GetLastFile(entity string) (interface{}, error) {
 	var url = os.Getenv("API_STORAGE") + LastFile
 
-	data, err := json.Marshal(map[string]string{"entity": "event"})
+	data, err := json.Marshal(map[string]string{"entity": entity})
 	if err != nil {
 		log.Println("Can not marshal body storage", err)
 	}
