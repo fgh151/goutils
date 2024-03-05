@@ -8,6 +8,7 @@ import (
 	"gorm.io/gorm"
 	"io"
 	"log"
+	"mime/multipart"
 	"net"
 	"net/http"
 	"net/http/httputil"
@@ -230,6 +231,28 @@ func UserMiddleware() gin.HandlerFunc {
 
 		c.Next()
 	}
+}
+
+func PrepareUploadStorage(entity string, entityId int, file *multipart.FileHeader) ([]byte, error) {
+	type request struct {
+		Entity   string `json:"entity"`
+		EntityId int    `json:"entity_id"`
+		File     []byte `json:"file" form:"file"`
+	}
+
+	open, _ := file.Open()
+	b, err := io.ReadAll(open)
+
+	data, err := json.Marshal(&request{
+		Entity:   entity,
+		EntityId: entityId,
+		File:     b,
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	return data, nil
 }
 
 func FetchInternal(method string, url string, body io.Reader) (interface{}, error) {
