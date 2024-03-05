@@ -1,6 +1,7 @@
 package sdk
 
 import (
+	"bytes"
 	"encoding/json"
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
@@ -253,6 +254,17 @@ func PrepareUploadStorage(entity string, entityId int, file *multipart.FileHeade
 	}
 
 	return data, nil
+}
+
+func GetLastFile() (interface{}, error) {
+	var url = os.Getenv("API_STORAGE") + LastFile
+
+	data, err := json.Marshal(map[string]string{"entity": "event"})
+	if err != nil {
+		log.Println("Can not marshal body storage", err)
+	}
+
+	return FetchInternal("GET", url, bytes.NewReader(data))
 }
 
 type ResponseStorage struct {
