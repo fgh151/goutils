@@ -16,6 +16,12 @@ import (
 	"strings"
 )
 
+// api storage
+const (
+	UploadStorage = "/storage/upload"
+	LastFile      = "/storage/last"
+)
+
 func CorsMiddleware() func(c *gin.Context) {
 	return func(c *gin.Context) {
 		c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
@@ -214,7 +220,7 @@ func UserMiddleware() gin.HandlerFunc {
 
 			if token != "" {
 				c.Set("token", token)
-				u, err := FetchInternal(os.Getenv("DNS_USER") + "/user/byToken/" + token)
+				u, err := FetchInternal("GET", os.Getenv("DNS_USER")+"/user/byToken/"+token, nil)
 
 				if err == nil {
 					c.Set("user", u)
@@ -226,10 +232,12 @@ func UserMiddleware() gin.HandlerFunc {
 	}
 }
 
-func FetchInternal(url string) (interface{}, error) {
+func FetchInternal(method string, url string, body io.Reader) (interface{}, error) {
 	client := http.Client{}
 
-	resp, err := client.Get(url)
+	req, err := http.NewRequest(method, url, body)
+
+	resp, err := client.Do(req)
 	defer resp.Body.Close()
 	if err != nil {
 		return nil, err
