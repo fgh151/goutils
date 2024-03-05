@@ -255,6 +255,10 @@ func PrepareUploadStorage(entity string, entityId int, file *multipart.FileHeade
 	return data, nil
 }
 
+type ResponseStorage struct {
+	Image string `json:"image"`
+}
+
 func FetchInternal(method string, url string, body io.Reader) (interface{}, error) {
 	client := http.Client{}
 
