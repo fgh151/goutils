@@ -1,7 +1,6 @@
 package sdk
 
 import (
-	"bytes"
 	"encoding/json"
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
@@ -9,7 +8,6 @@ import (
 	"gorm.io/gorm"
 	"io"
 	"log"
-	"mime/multipart"
 	"net"
 	"net/http"
 	"net/http/httputil"
@@ -222,7 +220,7 @@ func UserMiddleware() gin.HandlerFunc {
 
 			if token != "" {
 				c.Set("token", token)
-				u, err := FetchInternal("GET", os.Getenv("DNS_USER")+"/user/byToken/"+token, nil)
+				u, err := FetchInternal(os.Getenv("DNS_USER") + "/user/byToken/" + token)
 
 				if err == nil {
 					c.Set("user", u)
@@ -234,47 +232,29 @@ func UserMiddleware() gin.HandlerFunc {
 	}
 }
 
-func PrepareUploadStorage(entity string, entityId int, file *multipart.FileHeader) ([]byte, error) {
-	type request struct {
-		Entity   string `json:"entity"`
-		EntityId int    `json:"entity_id"`
-		File     []byte `json:"file" form:"file"`
-	}
-
-	open, _ := file.Open()
-	b, err := io.ReadAll(open)
-
-	data, err := json.Marshal(&request{
-		Entity:   entity,
-		EntityId: entityId,
-		File:     b,
-	})
-	if err != nil {
-		return nil, err
-	}
-
-	return data, nil
-}
-
-func GetLastFile(entity string, url string) (interface{}, error) {
-	data, err := json.Marshal(map[string]string{"entity": entity})
-	if err != nil {
-		log.Println("Can not marshal body storage", err)
-	}
-
-	return FetchInternal("GET", url, bytes.NewReader(data))
-}
-
-type ResponseStorage struct {
-	Image string `json:"image"`
-}
-
-func FetchInternal(method string, url string, body io.Reader) (interface{}, error) {
+func FetchAnyMethodInternal(method string, url string, body io.Reader) (interface{}, error) {
 	client := http.Client{}
 
 	req, err := http.NewRequest(method, url, body)
 
 	resp, err := client.Do(req)
+	defer resp.Body.Close()
+	if err != nil {
+		return nil, err
+	}
+
+	b, err := httputil.DumpResponse(resp, true)
+	if err != nil {
+		return nil, err
+	}
+
+	return string(b), nil
+}
+
+func FetchInternal(url string) (interface{}, error) {
+	client := http.Client{}
+
+	resp, err := client.Get(url)
 	defer resp.Body.Close()
 	if err != nil {
 		return nil, err
