@@ -16,6 +16,12 @@ import (
 	"strings"
 )
 
+// api storage
+const (
+	UploadStorage = "/storage/upload"
+	LastFile      = "/storage/last"
+)
+
 func CorsMiddleware() func(c *gin.Context) {
 	return func(c *gin.Context) {
 		c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
@@ -224,6 +230,25 @@ func UserMiddleware() gin.HandlerFunc {
 
 		c.Next()
 	}
+}
+
+func FetchAnyMethodInternal(method string, url string, body io.Reader) (interface{}, error) {
+	client := http.Client{}
+
+	req, err := http.NewRequest(method, url, body)
+
+	resp, err := client.Do(req)
+	defer resp.Body.Close()
+	if err != nil {
+		return nil, err
+	}
+
+	b, err := httputil.DumpResponse(resp, true)
+	if err != nil {
+		return nil, err
+	}
+
+	return string(b), nil
 }
 
 func FetchInternal(url string) (interface{}, error) {
