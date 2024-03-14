@@ -16,12 +16,6 @@ import (
 	"strings"
 )
 
-// api storage
-const (
-	UploadStorage = "/storage/upload"
-	LastFile      = "/storage/last"
-)
-
 func CorsMiddleware() func(c *gin.Context) {
 	return func(c *gin.Context) {
 		c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
