@@ -261,3 +261,10 @@ func FetchInternal(url string) (interface{}, error) {
 
 	return string(b), nil
 }
+
+func ErrorHandler(c *gin.Context, code int, text string) {
+	c.JSON(code, gin.H{"message": text})
+	c.Writer.WriteHeaderNow()
+	c.Abort()
+	return
+}
