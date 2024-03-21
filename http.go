@@ -226,24 +226,18 @@ func UserMiddleware() gin.HandlerFunc {
 	}
 }
 
-func FetchAnyMethodInternal(method string, url string, body io.Reader) (interface{}, error) {
-	client := http.Client{}
-
+func RawFetch(method string, url string, body io.Reader) (*http.Response, error) {
 	req, err := http.NewRequest(method, url, body)
 
+	client := &http.Client{}
 	resp, err := client.Do(req)
 	if err != nil {
 		return nil, err
 	}
+	defer resp.Body.Close()
 
-	b, err := httputil.DumpResponse(resp, true)
-	if err != nil {
-		return nil, err
-	}
-
-	return string(b), nil
+	return resp, nil
 }
-
 func FetchInternal(url string) (interface{}, error) {
 	client := http.Client{}
 
