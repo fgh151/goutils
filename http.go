@@ -232,7 +232,6 @@ func FetchAnyMethodInternal(method string, url string, body io.Reader) (interfac
 	req, err := http.NewRequest(method, url, body)
 
 	resp, err := client.Do(req)
-	defer resp.Body.Close()
 	if err != nil {
 		return nil, err
 	}
@@ -249,7 +248,6 @@ func FetchInternal(url string) (interface{}, error) {
 	client := http.Client{}
 
 	resp, err := client.Get(url)
-	defer resp.Body.Close()
 	if err != nil {
 		return nil, err
 	}
