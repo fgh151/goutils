@@ -2,6 +2,9 @@ package crud
 
 import (
 	"context"
+	"crypto/md5"
+	"encoding/hex"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"github.com/gin-gonic/gin"
@@ -79,7 +82,7 @@ func (u BaseCrudModel) DecodeCreate(c *gin.Context) (interface{}, error) {
 	return c.Bind(u), nil
 }
 
-func (a Application) AppendListEndpoint(prefix string, entity CrudModel, cache bool, key string, middlewares ...gin.HandlerFunc) {
+func (a Application) AppendListEndpoint(prefix string, entity CrudModel, cache bool, middlewares ...gin.HandlerFunc) {
 	a.Router.GET(prefix+"/list", func(c *gin.Context) {
 
 		for _, middleware := range middlewares {
@@ -121,6 +124,26 @@ func (a Application) AppendListEndpoint(prefix string, entity CrudModel, cache b
 		}
 
 		if cache {
+			var keyHash struct {
+				prefix  string
+				request ListRequest
+				params  []FilterParams
+			}
+			var (
+				key  string
+				hash [16]byte
+			)
+
+			h, err := json.Marshal(keyHash)
+			if err != nil {
+				fmt.Println("cannot create key hash in cache")
+				hash = md5.Sum([]byte(time.Now().String()))
+			} else {
+				hash = md5.Sum(h)
+			}
+
+			key = hex.EncodeToString(hash[:])
+
 			data, err := a.Cache.Get(key)
 			if err == nil {
 				v := data.(resp)
