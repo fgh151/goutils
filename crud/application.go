@@ -4,7 +4,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"github.com/bradfitz/gomemcache/memcache"
 	"github.com/gin-gonic/gin"
 	"github.com/golang-migrate/migrate/v4"
 	_ "github.com/golang-migrate/migrate/v4/database/postgres"
@@ -12,6 +11,7 @@ import (
 	_ "github.com/golang-migrate/migrate/v4/source/github"
 	"github.com/rgglez/gormcache"
 	"github.com/runetid/go-sdk"
+	"github.com/runetid/go-sdk/cache"
 	"github.com/runetid/go-sdk/log"
 	"github.com/swaggo/files"
 	"github.com/swaggo/gin-swagger"
@@ -24,10 +24,13 @@ import (
 	"time"
 )
 
+const duration int32 = 3600
+
 type Application struct {
 	Router *gin.Engine
 	Db     *gorm.DB
 	Logger *log.AppLogger
+	Cache  cache.AppCache
 }
 
 type ApplicationConfig struct {
@@ -76,7 +79,7 @@ func (u BaseCrudModel) DecodeCreate(c *gin.Context) (interface{}, error) {
 	return c.Bind(u), nil
 }
 
-func (a Application) AppendListEndpoint(prefix string, entity CrudModel, middlewares ...gin.HandlerFunc) {
+func (a Application) AppendListEndpoint(prefix string, entity CrudModel, cache bool, key string, middlewares ...gin.HandlerFunc) {
 	a.Router.GET(prefix+"/list", func(c *gin.Context) {
 
 		for _, middleware := range middlewares {
@@ -111,7 +114,30 @@ func (a Application) AppendListEndpoint(prefix string, entity CrudModel, middlew
 		var m interface{}
 		var cnt int64
 
-		m, cnt, err = entity.List(a.Db, request, entity.GetFilterParams(c)...)
+		type resp struct {
+			m   interface{}
+			cnt int64
+			err error
+		}
+
+		if cache {
+			data, err := a.Cache.Get(key)
+			if err == nil {
+				v := data.(resp)
+				if v.m == nil {
+					v.m = make([]string, 0)
+				}
+				c.JSON(200, gin.H{"data": v.m, "error": v.err, "total": v.cnt})
+				return
+			}
+
+			m, cnt, err = entity.List(a.Db, request, entity.GetFilterParams(c)...)
+			if err == nil {
+				err = a.Cache.Set(key, &resp{m: m, cnt: cnt, err: err}, duration)
+			}
+		} else {
+			m, cnt, err = entity.List(a.Db, request, entity.GetFilterParams(c)...)
+		}
 
 		if m == nil {
 			m = make([]string, 0)
@@ -253,13 +279,13 @@ func NewCrudApplicationWithConfig(config ApplicationConfig) (*Application, error
 
 	db, err := gorm.Open(postgres.Open(dsn), &gorm.Config{})
 
-	mdb := memcache.New(os.Getenv("CACHE_SRV"))
-	cache := gormcache.NewGormCache("my_cache", gormcache.NewMemcacheClient(mdb), gormcache.CacheConfig{
+	appCache := cache.GetClient()
+	ch := gormcache.NewGormCache("my_cache", appCache.GormClient(), gormcache.CacheConfig{
 		TTL:    600 * time.Second,
 		Prefix: "cache:",
 	})
 
-	err = db.Use(cache)
+	err = db.Use(ch)
 	if err == nil {
 		db.Session(&gorm.Session{Context: context.WithValue(context.Background(), gormcache.UseCacheKey, true)})
 	}
@@ -310,10 +336,21 @@ func NewCrudApplicationWithConfig(config ApplicationConfig) (*Application, error
 		r.Use(gin.Recovery())
 	}
 
+	r.GET("/internal/cache/flush", func(c *gin.Context) {
+		err := appCache.Flush()
+		if err != nil {
+			sdk.ErrorHandler(c, http.StatusBadRequest, err.Error())
+			return
+		}
+		c.JSON(http.StatusOK, gin.H{"message": "flush cache success"})
+		return
+	})
+
 	return &Application{
 		Router: r,
 		Db:     db,
 		Logger: logger,
+		Cache:  appCache,
 	}, err
 }
 

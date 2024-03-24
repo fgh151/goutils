@@ -238,6 +238,7 @@ func RawFetch(method string, url string, body io.Reader) (*http.Response, error)
 
 	return resp, nil
 }
+
 func FetchInternal(url string) (interface{}, error) {
 	client := http.Client{}
 
