@@ -18,7 +18,7 @@ func GetClient() AppCache {
 	switch os.Getenv("CACHE_TYPE") {
 	case "Redis":
 		client = &Redis{}
-	case "Memmory":
+	case "Memory":
 	default:
 		client = &MemCache{Client: GetMemClient()}
 	}

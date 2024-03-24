@@ -33,3 +33,8 @@ RUN update-ca-certificates
 COPY --from=builder /app/main /main
 ENTRYPOINT ["/main", "-v"]
 ```
+
+### Cache
+Встроен механизм кэширования запросов, на данный момент только в апи AppendList, чтобы включить необходимо передать параметр cache = true и key 
+(уникальынй ключ кэширования), чтобы выбрать тип кэширования необходимо указать в .env "CACHE_TYPE" например Redis, Memory, 
+далее указать переменную в .env "CACHE_SRV" куда подключаться для кэша
