@@ -30,10 +30,11 @@ import (
 const duration int32 = 3600
 
 type Application struct {
-	Router *gin.Engine
-	Db     *gorm.DB
-	Logger *log.AppLogger
-	Cache  cache.AppCache
+	Router   *gin.Engine
+	Db       *gorm.DB
+	Logger   *log.AppLogger
+	Cache    cache.AppCache
+	hasCache bool
 }
 
 type ApplicationConfig struct {
@@ -117,32 +118,19 @@ func (a Application) AppendListEndpoint(prefix string, entity CrudModel, cache b
 		var m interface{}
 		var cnt int64
 
-		type resp struct {
-			m   interface{}
-			cnt int64
-			err error
-		}
+		if a.hasCache && cache {
+			type resp struct {
+				m   interface{}
+				cnt int64
+				err error
+			}
 
-		if cache {
-			var keyHash struct {
+			type keyHash struct {
 				prefix  string
 				request ListRequest
 				params  []FilterParams
 			}
-			var (
-				key  string
-				hash [16]byte
-			)
-
-			h, err := json.Marshal(keyHash)
-			if err != nil {
-				fmt.Println("cannot create key hash in cache")
-				hash = md5.Sum([]byte(time.Now().String()))
-			} else {
-				hash = md5.Sum(h)
-			}
-
-			key = hex.EncodeToString(hash[:])
+			key := getUniqueKey(&keyHash{prefix: prefix, request: request, params: entity.GetFilterParams(c)})
 
 			data, err := a.Cache.Get(key)
 			if err == nil {
@@ -248,7 +236,7 @@ func (a Application) AppendDeleteEndpoint(prefix string, entity CrudModel, middl
 	})
 }
 
-func (a Application) AppendGetEndpoint(prefix string, entity CrudModel, middlewares ...gin.HandlerFunc) {
+func (a Application) AppendGetEndpoint(prefix string, entity CrudModel, cache bool, middlewares ...gin.HandlerFunc) {
 	a.Router.GET(prefix, func(c *gin.Context) {
 
 		for _, middleware := range middlewares {
@@ -259,15 +247,43 @@ func (a Application) AppendGetEndpoint(prefix string, entity CrudModel, middlewa
 			return
 		}
 
-		model, err := entity.Get(a.Db, c.Param("id"))
+		if a.hasCache && cache {
+			type resp struct {
+				model interface{}
+				err   error
+			}
 
-		if err != nil {
-			c.JSON(http.StatusNotFound, gin.H{"data": model, "error": err})
+			type keyHash struct {
+				prefix string
+				id     string
+			}
+
+			key := getUniqueKey(&keyHash{prefix: prefix, id: c.Param("id")})
+			data, err := a.Cache.Get(key)
+			if err == nil {
+				v := data.(resp)
+				c.JSON(http.StatusOK, gin.H{"data": v.model, "error": v.err})
+				return
+			}
+
+			model, err := entity.Get(a.Db, c.Param("id"))
+			if err == nil {
+				err = a.Cache.Set(key, &resp{model: model, err: err}, duration)
+				c.JSON(http.StatusOK, gin.H{"data": model, "error": err})
+				return
+			} else {
+				c.JSON(http.StatusNotFound, gin.H{"data": model, "error": err})
+				return
+			}
+		} else {
+			model, err := entity.Get(a.Db, c.Param("id"))
+			if err != nil {
+				c.JSON(http.StatusNotFound, gin.H{"data": model, "error": err})
+				return
+			}
+			c.JSON(http.StatusOK, gin.H{"data": model, "error": err})
 			return
 		}
-
-		c.JSON(200, gin.H{"data": model, "error": err})
-		return
 	})
 }
 
@@ -302,15 +318,23 @@ func NewCrudApplicationWithConfig(config ApplicationConfig) (*Application, error
 
 	db, err := gorm.Open(postgres.Open(dsn), &gorm.Config{})
 
-	appCache := cache.GetClient()
-	ch := gormcache.NewGormCache("my_cache", appCache.GormClient(), gormcache.CacheConfig{
-		TTL:    600 * time.Second,
-		Prefix: "cache:",
-	})
+	c := make(chan bool)
+	var hasCache bool
+	var appCache cache.AppCache
 
-	err = db.Use(ch)
-	if err == nil {
-		db.Session(&gorm.Session{Context: context.WithValue(context.Background(), gormcache.UseCacheKey, true)})
+	go getClientCache(c)
+	hasCache = <-c
+	if hasCache {
+		appCache = cache.GetClient()
+		ch := gormcache.NewGormCache("my_cache", appCache.GormClient(), gormcache.CacheConfig{
+			TTL:    600 * time.Second,
+			Prefix: "cache:",
+		})
+
+		err = db.Use(ch)
+		if err == nil {
+			db.Session(&gorm.Session{Context: context.WithValue(context.Background(), gormcache.UseCacheKey, true)})
+		}
 	}
 
 	if config.DbMigrationsPath != "" {
@@ -370,11 +394,36 @@ func NewCrudApplicationWithConfig(config ApplicationConfig) (*Application, error
 	})
 
 	return &Application{
-		Router: r,
-		Db:     db,
-		Logger: logger,
-		Cache:  appCache,
+		Router:   r,
+		Db:       db,
+		Logger:   logger,
+		Cache:    appCache,
+		hasCache: hasCache,
 	}, err
+}
+
+func getClientCache(c chan bool) {
+	appCache := cache.GetClient()
+	if appCache != nil {
+		c <- true
+	} else {
+		time.Sleep(time.Second * 30)
+		getClientCache(c)
+	}
+}
+
+func getUniqueKey(keyHash interface{}) string {
+	var hash [16]byte
+
+	h, err := json.Marshal(keyHash)
+	if err != nil {
+		fmt.Println("cannot create key hash in cache")
+		hash = md5.Sum([]byte(time.Now().String()))
+	} else {
+		hash = md5.Sum(h)
+	}
+
+	return hex.EncodeToString(hash[:])
 }
 
 type ListRequest struct {
