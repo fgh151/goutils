@@ -234,7 +234,6 @@ func RawFetch(method string, url string, body io.Reader) (*http.Response, error)
 	if err != nil {
 		return nil, err
 	}
-	defer resp.Body.Close()
 
 	return resp, nil
 }
