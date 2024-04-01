@@ -12,7 +12,9 @@ import (
 	_ "github.com/golang-migrate/migrate/v4/source/github"
 	"github.com/rgglez/gormcache"
 	"github.com/runetid/go-sdk"
-	"github.com/runetid/go-sdk/log"
+	"github.com/sirupsen/logrus"
+
+	//"github.com/runetid/go-sdk/log"
 	"github.com/swaggo/files"
 	"github.com/swaggo/gin-swagger"
 	"gorm.io/driver/postgres"
@@ -27,7 +29,7 @@ import (
 type Application struct {
 	Router *gin.Engine
 	Db     *gorm.DB
-	Logger *log.AppLogger
+	//Logger *log.AppLogger
 }
 
 type ApplicationConfig struct {
@@ -240,7 +242,13 @@ func NewCrudApplication(publicRoutes []string) (*Application, error) {
 
 func NewCrudApplicationWithConfig(config ApplicationConfig) (*Application, error) {
 
-	logger := log.NewAppLogger()
+	//logger := log.NewAppLogger()
+
+	logger := logrus.New()
+	logger.Formatter = &logrus.JSONFormatter{}
+	file, err := os.OpenFile("app.log", os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0666)
+	logger.SetOutput(file)
+	log2.SetOutput(logger.Writer())
 
 	dsn := fmt.Sprintf(
 		"host=%s user=%s password=%s dbname=%s port=%s sslmode=disable TimeZone=Europe/Moscow",
@@ -288,32 +296,32 @@ func NewCrudApplicationWithConfig(config ApplicationConfig) (*Application, error
 	r.Use(sdk.DbMiddleware(db))
 	r.Use(sdk.AccountMiddleware(config.PublicRoutes))
 
-	if logger.Inner == false {
-		r.Use(gin.LoggerWithConfig(gin.LoggerConfig{
-			Formatter: func(param gin.LogFormatterParams) string {
-				return fmt.Sprintf("%s - [%s] %s %s %s %d %s \"%s\" %s %s\n ",
-					param.ClientIP,
-					param.TimeStamp.Format(time.RFC1123),
-					param.Method,
-					param.Path,
-					param.Request.Proto,
-					param.StatusCode,
-					param.Latency,
-					param.Request.UserAgent(),
-					param.ErrorMessage,
-					param.Keys["traceId"],
-				)
-			},
-			Output:    logger.Writer(),
-			SkipPaths: []string{},
-		}))
-		r.Use(gin.Recovery())
-	}
+	//if logger.Inner == false {
+	//	r.Use(gin.LoggerWithConfig(gin.LoggerConfig{
+	//		Formatter: func(param gin.LogFormatterParams) string {
+	//			return fmt.Sprintf("%s - [%s] %s %s %s %d %s \"%s\" %s %s\n ",
+	//				param.ClientIP,
+	//				param.TimeStamp.Format(time.RFC1123),
+	//				param.Method,
+	//				param.Path,
+	//				param.Request.Proto,
+	//				param.StatusCode,
+	//				param.Latency,
+	//				param.Request.UserAgent(),
+	//				param.ErrorMessage,
+	//				param.Keys["traceId"],
+	//			)
+	//		},
+	//		Output:    logger.Writer(),
+	//		SkipPaths: []string{},
+	//	}))
+	//	r.Use(gin.Recovery())
+	//}
 
 	return &Application{
 		Router: r,
 		Db:     db,
-		Logger: logger,
+		//Logger: logger,
 	}, err
 }
 
