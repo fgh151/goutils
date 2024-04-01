@@ -85,6 +85,7 @@ func AccountMiddleware(whiteList []string) gin.HandlerFunc {
 		req, err := http.NewRequest(http.MethodGet, os.Getenv("DNS_ACCOUNT")+"/apiaccount/check", nil)
 
 		if err != nil {
+			log.Println(err.Error() + " " + c.Request.Header.Get("referer"))
 			c.JSON(http.StatusUnauthorized, gin.H{"message": "Cant check account"})
 			c.Writer.WriteHeaderNow()
 			c.Abort()
@@ -102,6 +103,7 @@ func AccountMiddleware(whiteList []string) gin.HandlerFunc {
 		res, err := http.DefaultClient.Do(req)
 
 		if err != nil {
+			log.Println(err.Error() + " " + c.Request.Header.Get("referer"))
 			c.JSON(http.StatusUnauthorized, gin.H{"message": "Cant check api account"})
 			c.Writer.WriteHeaderNow()
 			c.Abort()
@@ -138,6 +140,7 @@ func AdminOnlyMiddleware() gin.HandlerFunc {
 		role, exist := c.Get("role")
 
 		if exist == false || role != "admin" {
+			log.Println("Admin only method :" + c.Request.Header.Get("referer"))
 			c.JSON(http.StatusUnauthorized, gin.H{"message": "admin only method"})
 			c.Writer.WriteHeaderNow()
 			c.Abort()
@@ -154,6 +157,7 @@ func RbacMiddleware(role string) gin.HandlerFunc {
 		header := c.Request.Header.Get("Authorization")
 
 		if header == "" {
+			log.Println("RBAC middleware: Messed Authorization header " + c.Request.Header.Get("referer"))
 			c.JSON(http.StatusUnauthorized, gin.H{"message": "Messed Authorization header"})
 			c.Writer.WriteHeaderNow()
 			c.Abort()
@@ -163,7 +167,8 @@ func RbacMiddleware(role string) gin.HandlerFunc {
 		splitToken := strings.Split(header, "Bearer ")
 
 		if len(splitToken) < 2 {
-			c.JSON(http.StatusUnauthorized, gin.H{"message": "Messed Bearer token"})
+			log.Println("RBAC Missed Bearer token " + c.Request.Header.Get("referer"))
+			c.JSON(http.StatusUnauthorized, gin.H{"message": "Missed Bearer token"})
 			c.Writer.WriteHeaderNow()
 			c.Abort()
 			return
@@ -174,6 +179,7 @@ func RbacMiddleware(role string) gin.HandlerFunc {
 		req, err := http.NewRequest(http.MethodGet, os.Getenv("DNS_USERS")+"/user/can/"+token+"/"+role, nil)
 
 		if err != nil {
+			log.Println("RBAC Missed cant create request to user microservice " + c.Request.Header.Get("referer"))
 			c.JSON(http.StatusUnauthorized, gin.H{"message": "Cant check user permissions"})
 			c.Writer.WriteHeaderNow()
 			c.Abort()
@@ -183,6 +189,7 @@ func RbacMiddleware(role string) gin.HandlerFunc {
 		res, err := http.DefaultClient.Do(req)
 
 		if res.StatusCode != http.StatusOK {
+			log.Println("RBAC Missed cant fetch user microservice " + c.Request.Header.Get("referer"))
 			c.JSON(http.StatusUnauthorized, res.Body)
 			c.Writer.WriteHeaderNow()
 			c.Abort()
