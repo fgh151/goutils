@@ -145,9 +145,13 @@ func GinLoggerMiddleware(appLogger *AppLogger, params GinLoggerMiddlewareParams)
 					"traceId": c.Value("traceId"),
 				}).Warn(msg)
 			} else {
-				appLogger.Info(msg)
+				appLogger.logger.WithFields(logrus.Fields{
+					"method":  c.Request.Method,
+					"path":    c.Request.URL.Path,
+					"query":   c.Request.URL.Query(),
+					"traceId": c.Value("traceId"),
+				}).Info(msg)
 			}
-
 		}
 	}
 }
