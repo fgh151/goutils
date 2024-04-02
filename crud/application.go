@@ -80,7 +80,8 @@ func (u BaseCrudModel) DecodeCreate(c *gin.Context) (interface{}, error) {
 
 func (a Application) AppendListEndpoint(prefix string, entity CrudModel, middlewares ...gin.HandlerFunc) {
 	a.Router.GET(prefix+"/list", func(c *gin.Context) {
-		a.Logger.GetLogger().WithField("traceId", log.GetTraceId(c))
+
+		tx := a.Db.WithContext(c)
 
 		for _, middleware := range middlewares {
 			middleware(c)
@@ -114,7 +115,7 @@ func (a Application) AppendListEndpoint(prefix string, entity CrudModel, middlew
 		var m interface{}
 		var cnt int64
 
-		m, cnt, err = entity.List(a.Db, request, entity.GetFilterParams(c)...)
+		m, cnt, err = entity.List(tx, request, entity.GetFilterParams(c)...)
 
 		if m == nil {
 			m = make([]string, 0)
@@ -127,7 +128,6 @@ func (a Application) AppendListEndpoint(prefix string, entity CrudModel, middlew
 
 func (a Application) AppendCreateEndpoint(prefix string, entity CrudModel, middlewares ...gin.HandlerFunc) {
 	a.Router.POST(prefix, func(c *gin.Context) {
-		a.Logger.GetLogger().WithField("traceId", log.GetTraceId(c))
 		for _, middleware := range middlewares {
 			middleware(c)
 		}
@@ -284,6 +284,9 @@ func NewCrudApplicationWithConfig(config ApplicationConfig) (*Application, error
 	}
 
 	r := gin.Default()
+	r.Use(func(c *gin.Context) {
+		c.Set("traceId", log.GetTraceId(c))
+	})
 	r.Use(log.GinLoggerMiddleware(&logger, log.GinLoggerMiddlewareParams{}))
 	r.Use(sdk.UserMiddleware())
 	r.Use(sdk.TraceMiddleware())

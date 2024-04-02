@@ -38,7 +38,8 @@ func NewAppLogger() AppLogger {
 }
 
 type AppLogger struct {
-	logger *logrus.Logger
+	logger  *logrus.Logger
+	TraceId string
 }
 
 func (l AppLogger) Info(v ...any) {
@@ -131,15 +132,17 @@ func GinLoggerMiddleware(appLogger *AppLogger, params GinLoggerMiddlewareParams)
 
 			if statusCode >= 500 {
 				appLogger.logger.WithFields(logrus.Fields{
-					"method": c.Request.Method,
-					"path":   c.Request.URL.Path,
-					"query":  c.Request.URL.Query(),
+					"method":  c.Request.Method,
+					"path":    c.Request.URL.Path,
+					"query":   c.Request.URL.Query(),
+					"traceId": c.Get("tarceId"),
 				}).Error(msg)
 			} else if statusCode >= 400 {
 				appLogger.logger.WithFields(logrus.Fields{
-					"method": c.Request.Method,
-					"path":   c.Request.URL.Path,
-					"query":  c.Request.URL.Query(),
+					"method":  c.Request.Method,
+					"path":    c.Request.URL.Path,
+					"query":   c.Request.URL.Query(),
+					"traceId": c.Get("tarceId"),
 				}).Warn(msg)
 			} else {
 				appLogger.Info(msg)
@@ -194,6 +197,7 @@ func (l *GormLogger) Trace(ctx context.Context, begin time.Time, fc func() (stri
 	}
 
 	fields["sql"] = sql
+	fields["traceId"] = ctx.Value("traceId")
 
 	if err != nil && !(errors.Is(err, gorm.ErrRecordNotFound) && l.SkipErrRecordNotFound) {
 		l.logger.WithField("test", "1").Error(sql)
