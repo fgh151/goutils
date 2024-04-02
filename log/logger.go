@@ -135,14 +135,14 @@ func GinLoggerMiddleware(appLogger *AppLogger, params GinLoggerMiddlewareParams)
 					"method":  c.Request.Method,
 					"path":    c.Request.URL.Path,
 					"query":   c.Request.URL.Query(),
-					"traceId": c.Get("tarceId"),
+					"traceId": c.Value("traceId"),
 				}).Error(msg)
 			} else if statusCode >= 400 {
 				appLogger.logger.WithFields(logrus.Fields{
 					"method":  c.Request.Method,
 					"path":    c.Request.URL.Path,
 					"query":   c.Request.URL.Query(),
-					"traceId": c.Get("tarceId"),
+					"traceId": c.Value("traceId"),
 				}).Warn(msg)
 			} else {
 				appLogger.Info(msg)
