@@ -55,7 +55,10 @@ func (l AppLogger) Error(v ...any) {
 }
 
 func (l AppLogger) WithContext(ctx context.Context) *logrus.Entry {
-	return l.logger.WithContext(ctx)
+
+	return l.logger.WithFields(logrus.Fields{
+		"traceId": ctx.Value("traceId"),
+	})
 }
 
 func (l AppLogger) GetLogger() *logrus.Logger {
