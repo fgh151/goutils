@@ -12,7 +12,7 @@ import (
 	_ "github.com/golang-migrate/migrate/v4/source/github"
 	"github.com/rgglez/gormcache"
 	"github.com/runetid/go-sdk"
-	"github.com/sirupsen/logrus"
+	"github.com/runetid/go-sdk/log"
 
 	//"github.com/runetid/go-sdk/log"
 	"github.com/swaggo/files"
@@ -29,7 +29,7 @@ import (
 type Application struct {
 	Router *gin.Engine
 	Db     *gorm.DB
-	//Logger *log.AppLogger
+	Logger *log.AppLogger
 }
 
 type ApplicationConfig struct {
@@ -242,13 +242,7 @@ func NewCrudApplication(publicRoutes []string) (*Application, error) {
 
 func NewCrudApplicationWithConfig(config ApplicationConfig) (*Application, error) {
 
-	//logger := log.NewAppLogger()
-
-	logger := logrus.New()
-	logger.Formatter = &logrus.JSONFormatter{}
-	file, err := os.OpenFile("app.log", os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0666)
-	logger.SetOutput(file)
-	log2.SetOutput(logger.Writer())
+	logger := log.NewAppLogger()
 
 	dsn := fmt.Sprintf(
 		"host=%s user=%s password=%s dbname=%s port=%s sslmode=disable TimeZone=Europe/Moscow",
@@ -259,7 +253,7 @@ func NewCrudApplicationWithConfig(config ApplicationConfig) (*Application, error
 		os.Getenv("DB_PORT"),
 	)
 
-	db, err := gorm.Open(postgres.Open(dsn), &gorm.Config{})
+	db, err := gorm.Open(postgres.Open(dsn), &gorm.Config{Logger: log.NewGormLogger(&logger)})
 
 	mdb := memcache.New(os.Getenv("CACHE_SRV"))
 	cache := gormcache.NewGormCache("my_cache", gormcache.NewMemcacheClient(mdb), gormcache.CacheConfig{
@@ -289,6 +283,7 @@ func NewCrudApplicationWithConfig(config ApplicationConfig) (*Application, error
 	}
 
 	r := gin.Default()
+	r.Use(log.GinLoggerMiddleware(&logger, log.GinLoggerMiddlewareParams{}))
 	r.Use(sdk.UserMiddleware())
 	r.Use(sdk.TraceMiddleware())
 	r.Use(sdk.CorsMiddleware())
@@ -321,7 +316,7 @@ func NewCrudApplicationWithConfig(config ApplicationConfig) (*Application, error
 	return &Application{
 		Router: r,
 		Db:     db,
-		//Logger: logger,
+		Logger: &logger,
 	}, err
 }
 
