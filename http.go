@@ -221,7 +221,7 @@ func UserMiddleware() gin.HandlerFunc {
 
 			if token != "" {
 				c.Set("token", token)
-				u, err := FetchInternal(os.Getenv("DNS_USER") + "/user/byToken/" + token)
+				u, err := FetchInternal(os.Getenv("DNS_USER")+"/user/byToken/"+token, c.Value("traceId").(string))
 
 				if err == nil {
 					c.Set("user", u)
@@ -233,8 +233,9 @@ func UserMiddleware() gin.HandlerFunc {
 	}
 }
 
-func RawFetch(method string, url string, body io.Reader) (*http.Response, error) {
+func RawFetch(method string, url string, body io.Reader, traceId string) (*http.Response, error) {
 	req, err := http.NewRequest(method, url, body)
+	req.Header.Set("X-Trace-Id", traceId)
 
 	client := &http.Client{}
 	resp, err := client.Do(req)
@@ -244,10 +245,12 @@ func RawFetch(method string, url string, body io.Reader) (*http.Response, error)
 
 	return resp, nil
 }
-func FetchInternal(url string) (interface{}, error) {
+func FetchInternal(url string, traceId string) (interface{}, error) {
 	client := http.Client{}
+	req, _ := http.NewRequest("GET", url, nil)
+	req.Header.Set("X-Trace-Id", traceId)
 
-	resp, err := client.Get(url)
+	resp, err := client.Do(req)
 	if err != nil {
 		return nil, err
 	}

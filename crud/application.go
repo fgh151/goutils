@@ -13,6 +13,8 @@ import (
 	"github.com/rgglez/gormcache"
 	"github.com/runetid/go-sdk"
 	"github.com/runetid/go-sdk/log"
+
+	//"github.com/runetid/go-sdk/log"
 	"github.com/swaggo/files"
 	"github.com/swaggo/gin-swagger"
 	"gorm.io/driver/postgres"
@@ -55,13 +57,13 @@ func (a Application) Run() {
 }
 
 type CrudModel interface {
-	List(db *gorm.DB, request ListRequest, params ...FilterParams) (interface{}, int64, error)
+	List(db *gorm.DB, request ListRequest, ctx context.Context, params ...FilterParams) (interface{}, int64, error)
 	GetFilterParams(c *gin.Context) []FilterParams
-	Create(db *gorm.DB) (interface{}, error)
-	Update(db *gorm.DB, key string) (interface{}, error)
+	Create(db *gorm.DB, ctx context.Context) (interface{}, error)
+	Update(db *gorm.DB, key string, ctx context.Context) (interface{}, error)
 	DecodeCreate(c *gin.Context) (interface{}, error)
-	Delete(db *gorm.DB, key string) bool
-	Get(db *gorm.DB, key string) (interface{}, error)
+	Delete(db *gorm.DB, key string, ctx context.Context) bool
+	Get(db *gorm.DB, key string, ctx context.Context) (interface{}, error)
 }
 
 type BaseCrudModel struct {
@@ -78,6 +80,8 @@ func (u BaseCrudModel) DecodeCreate(c *gin.Context) (interface{}, error) {
 
 func (a Application) AppendListEndpoint(prefix string, entity CrudModel, middlewares ...gin.HandlerFunc) {
 	a.Router.GET(prefix+"/list", func(c *gin.Context) {
+
+		tx := a.Db.WithContext(c)
 
 		for _, middleware := range middlewares {
 			middleware(c)
@@ -111,7 +115,7 @@ func (a Application) AppendListEndpoint(prefix string, entity CrudModel, middlew
 		var m interface{}
 		var cnt int64
 
-		m, cnt, err = entity.List(a.Db, request, entity.GetFilterParams(c)...)
+		m, cnt, err = entity.List(tx, request, c, entity.GetFilterParams(c)...)
 
 		if m == nil {
 			m = make([]string, 0)
@@ -124,7 +128,6 @@ func (a Application) AppendListEndpoint(prefix string, entity CrudModel, middlew
 
 func (a Application) AppendCreateEndpoint(prefix string, entity CrudModel, middlewares ...gin.HandlerFunc) {
 	a.Router.POST(prefix, func(c *gin.Context) {
-
 		for _, middleware := range middlewares {
 			middleware(c)
 		}
@@ -139,7 +142,7 @@ func (a Application) AppendCreateEndpoint(prefix string, entity CrudModel, middl
 			return
 		}
 
-		m, err := decode.(CrudModel).Create(a.Db)
+		m, err := decode.(CrudModel).Create(a.Db, c)
 		if err != nil {
 			c.JSON(http.StatusUnprocessableEntity, gin.H{"error": err.Error()})
 			return
@@ -167,7 +170,7 @@ func (a Application) AppendUpdateEndpoint(prefix string, entity CrudModel, middl
 			return
 		}
 
-		m, err := decode.(CrudModel).Update(a.Db, c.Param("id"))
+		m, err := decode.(CrudModel).Update(a.Db, c.Param("id"), c)
 		if err != nil {
 			c.JSON(http.StatusUnprocessableEntity, gin.H{"error": err.Error()})
 			return
@@ -189,7 +192,7 @@ func (a Application) AppendDeleteEndpoint(prefix string, entity CrudModel, middl
 			return
 		}
 
-		if entity.Delete(a.Db, c.Param("id")) {
+		if entity.Delete(a.Db, c.Param("id"), c) {
 			c.JSON(http.StatusOK, gin.H{"message": "ok"})
 			return
 		}
@@ -210,7 +213,7 @@ func (a Application) AppendGetEndpoint(prefix string, entity CrudModel, middlewa
 			return
 		}
 
-		model, err := entity.Get(a.Db, c.Param("id"))
+		model, err := entity.Get(a.Db, c.Param("id"), c)
 
 		if err != nil {
 			c.JSON(http.StatusNotFound, gin.H{"data": model, "error": err})
@@ -251,7 +254,7 @@ func NewCrudApplicationWithConfig(config ApplicationConfig) (*Application, error
 		os.Getenv("DB_PORT"),
 	)
 
-	db, err := gorm.Open(postgres.Open(dsn), &gorm.Config{})
+	db, err := gorm.Open(postgres.Open(dsn), &gorm.Config{Logger: log.NewGormLogger(&logger)})
 
 	mdb := memcache.New(os.Getenv("CACHE_SRV"))
 	cache := gormcache.NewGormCache("my_cache", gormcache.NewMemcacheClient(mdb), gormcache.CacheConfig{
@@ -281,6 +284,10 @@ func NewCrudApplicationWithConfig(config ApplicationConfig) (*Application, error
 	}
 
 	r := gin.Default()
+	r.Use(func(c *gin.Context) {
+		c.Set("traceId", log.GetTraceId(c))
+	})
+	r.Use(log.GinLoggerMiddleware(&logger, log.GinLoggerMiddlewareParams{}))
 	r.Use(sdk.UserMiddleware())
 	r.Use(sdk.TraceMiddleware())
 	r.Use(sdk.CorsMiddleware())
@@ -288,32 +295,32 @@ func NewCrudApplicationWithConfig(config ApplicationConfig) (*Application, error
 	r.Use(sdk.DbMiddleware(db))
 	r.Use(sdk.AccountMiddleware(config.PublicRoutes))
 
-	if logger.Inner == false {
-		r.Use(gin.LoggerWithConfig(gin.LoggerConfig{
-			Formatter: func(param gin.LogFormatterParams) string {
-				return fmt.Sprintf("%s - [%s] %s %s %s %d %s \"%s\" %s %s\n ",
-					param.ClientIP,
-					param.TimeStamp.Format(time.RFC1123),
-					param.Method,
-					param.Path,
-					param.Request.Proto,
-					param.StatusCode,
-					param.Latency,
-					param.Request.UserAgent(),
-					param.ErrorMessage,
-					param.Keys["traceId"],
-				)
-			},
-			Output:    logger.Writer(),
-			SkipPaths: []string{},
-		}))
-		r.Use(gin.Recovery())
-	}
+	//if logger.Inner == false {
+	//	r.Use(gin.LoggerWithConfig(gin.LoggerConfig{
+	//		Formatter: func(param gin.LogFormatterParams) string {
+	//			return fmt.Sprintf("%s - [%s] %s %s %s %d %s \"%s\" %s %s\n ",
+	//				param.ClientIP,
+	//				param.TimeStamp.Format(time.RFC1123),
+	//				param.Method,
+	//				param.Path,
+	//				param.Request.Proto,
+	//				param.StatusCode,
+	//				param.Latency,
+	//				param.Request.UserAgent(),
+	//				param.ErrorMessage,
+	//				param.Keys["traceId"],
+	//			)
+	//		},
+	//		Output:    logger.Writer(),
+	//		SkipPaths: []string{},
+	//	}))
+	//	r.Use(gin.Recovery())
+	//}
 
 	return &Application{
 		Router: r,
 		Db:     db,
-		Logger: logger,
+		Logger: &logger,
 	}, err
 }
 

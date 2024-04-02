@@ -33,3 +33,6 @@ RUN update-ca-certificates
 COPY --from=builder /app/main /main
 ENTRYPOINT ["/main", "-v"]
 ```
+
+### Context variables
+- traceId
