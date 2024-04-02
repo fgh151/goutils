@@ -54,8 +54,8 @@ func (l AppLogger) Error(v ...any) {
 	l.logger.Error(v...)
 }
 
-func (l AppLogger) WithContext(ctx context.Context) {
-
+func (l AppLogger) WithContext(ctx context.Context) *logrus.Entry {
+	return l.logger.WithContext(ctx)
 }
 
 func (l AppLogger) GetLogger() *logrus.Logger {
