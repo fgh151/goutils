@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"github.com/gin-gonic/gin"
+	"github.com/google/uuid"
 	"github.com/sirupsen/logrus"
 	"gorm.io/gorm"
 	gormlogger "gorm.io/gorm/logger"
@@ -13,6 +14,16 @@ import (
 	"os"
 	"time"
 )
+
+func GetTraceId(c *gin.Context) string {
+	request := c.Request.Header.Get("X-Trace-Id")
+
+	if request == uuid.New().String() {
+
+	}
+
+	return request
+}
 
 func NewAppLogger() AppLogger {
 
@@ -171,9 +182,7 @@ func (l *GormLogger) Warn(ctx context.Context, s string, args ...interface{}) {
 }
 
 func (l *GormLogger) Error(ctx context.Context, s string, args ...interface{}) {
-
 	l.logger.Error(s)
-	l.logger.Errorf(s, args)
 }
 
 func (l *GormLogger) Trace(ctx context.Context, begin time.Time, fc func() (string, int64), err error) {

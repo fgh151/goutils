@@ -80,6 +80,7 @@ func (u BaseCrudModel) DecodeCreate(c *gin.Context) (interface{}, error) {
 
 func (a Application) AppendListEndpoint(prefix string, entity CrudModel, middlewares ...gin.HandlerFunc) {
 	a.Router.GET(prefix+"/list", func(c *gin.Context) {
+		a.Logger.GetLogger().WithField("traceId", log.GetTraceId(c))
 
 		for _, middleware := range middlewares {
 			middleware(c)
@@ -126,7 +127,7 @@ func (a Application) AppendListEndpoint(prefix string, entity CrudModel, middlew
 
 func (a Application) AppendCreateEndpoint(prefix string, entity CrudModel, middlewares ...gin.HandlerFunc) {
 	a.Router.POST(prefix, func(c *gin.Context) {
-
+		a.Logger.GetLogger().WithField("traceId", log.GetTraceId(c))
 		for _, middleware := range middlewares {
 			middleware(c)
 		}
