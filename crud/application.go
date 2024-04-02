@@ -128,6 +128,8 @@ func (a Application) AppendListEndpoint(prefix string, entity CrudModel, middlew
 
 func (a Application) AppendCreateEndpoint(prefix string, entity CrudModel, middlewares ...gin.HandlerFunc) {
 	a.Router.POST(prefix, func(c *gin.Context) {
+		tx := a.Db.WithContext(c)
+
 		for _, middleware := range middlewares {
 			middleware(c)
 		}
@@ -142,7 +144,7 @@ func (a Application) AppendCreateEndpoint(prefix string, entity CrudModel, middl
 			return
 		}
 
-		m, err := decode.(CrudModel).Create(a.Db, c)
+		m, err := decode.(CrudModel).Create(tx, c)
 		if err != nil {
 			c.JSON(http.StatusUnprocessableEntity, gin.H{"error": err.Error()})
 			return
@@ -155,6 +157,7 @@ func (a Application) AppendCreateEndpoint(prefix string, entity CrudModel, middl
 
 func (a Application) AppendUpdateEndpoint(prefix string, entity CrudModel, middlewares ...gin.HandlerFunc) {
 	a.Router.PUT(prefix, func(c *gin.Context) {
+		tx := a.Db.WithContext(c)
 
 		for _, middleware := range middlewares {
 			middleware(c)
@@ -170,7 +173,7 @@ func (a Application) AppendUpdateEndpoint(prefix string, entity CrudModel, middl
 			return
 		}
 
-		m, err := decode.(CrudModel).Update(a.Db, c.Param("id"), c)
+		m, err := decode.(CrudModel).Update(tx, c.Param("id"), c)
 		if err != nil {
 			c.JSON(http.StatusUnprocessableEntity, gin.H{"error": err.Error()})
 			return
@@ -183,7 +186,7 @@ func (a Application) AppendUpdateEndpoint(prefix string, entity CrudModel, middl
 
 func (a Application) AppendDeleteEndpoint(prefix string, entity CrudModel, middlewares ...gin.HandlerFunc) {
 	a.Router.DELETE(prefix, func(c *gin.Context) {
-
+		tx := a.Db.WithContext(c)
 		for _, middleware := range middlewares {
 			middleware(c)
 		}
@@ -192,7 +195,7 @@ func (a Application) AppendDeleteEndpoint(prefix string, entity CrudModel, middl
 			return
 		}
 
-		if entity.Delete(a.Db, c.Param("id"), c) {
+		if entity.Delete(tx, c.Param("id"), c) {
 			c.JSON(http.StatusOK, gin.H{"message": "ok"})
 			return
 		}
@@ -204,7 +207,7 @@ func (a Application) AppendDeleteEndpoint(prefix string, entity CrudModel, middl
 
 func (a Application) AppendGetEndpoint(prefix string, entity CrudModel, middlewares ...gin.HandlerFunc) {
 	a.Router.GET(prefix, func(c *gin.Context) {
-
+		tx := a.Db.WithContext(c)
 		for _, middleware := range middlewares {
 			middleware(c)
 		}
@@ -213,7 +216,7 @@ func (a Application) AppendGetEndpoint(prefix string, entity CrudModel, middlewa
 			return
 		}
 
-		model, err := entity.Get(a.Db, c.Param("id"), c)
+		model, err := entity.Get(tx, c.Param("id"), c)
 
 		if err != nil {
 			c.JSON(http.StatusNotFound, gin.H{"data": model, "error": err})
