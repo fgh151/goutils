@@ -57,13 +57,13 @@ func (a Application) Run() {
 }
 
 type CrudModel interface {
-	List(db *gorm.DB, request ListRequest, ctx context.Context, params ...FilterParams) (interface{}, int64, error)
+	List(db *gorm.DB, request ListRequest, ctx *context.Context, params ...FilterParams) (interface{}, int64, error)
 	GetFilterParams(c *gin.Context) []FilterParams
-	Create(db *gorm.DB, ctx context.Context) (interface{}, error)
-	Update(db *gorm.DB, key string, ctx context.Context) (interface{}, error)
+	Create(db *gorm.DB, ctx *context.Context) (interface{}, error)
+	Update(db *gorm.DB, key string, ctx *context.Context) (interface{}, error)
 	DecodeCreate(c *gin.Context) (interface{}, error)
-	Delete(db *gorm.DB, key string, ctx context.Context) bool
-	Get(db *gorm.DB, key string, ctx context.Context) (interface{}, error)
+	Delete(db *gorm.DB, key string, ctx *context.Context) bool
+	Get(db *gorm.DB, key string, ctx *context.Context) (interface{}, error)
 }
 
 type BaseCrudModel struct {
@@ -115,7 +115,9 @@ func (a Application) AppendListEndpoint(prefix string, entity CrudModel, middlew
 		var m interface{}
 		var cnt int64
 
-		m, cnt, err = entity.List(tx, request, c, entity.GetFilterParams(c)...)
+		ctx := context.WithoutCancel(c)
+
+		m, cnt, err = entity.List(tx, request, &ctx, entity.GetFilterParams(c)...)
 
 		if m == nil {
 			m = make([]string, 0)
@@ -144,7 +146,9 @@ func (a Application) AppendCreateEndpoint(prefix string, entity CrudModel, middl
 			return
 		}
 
-		m, err := decode.(CrudModel).Create(tx, c)
+		ctx := context.WithoutCancel(c)
+
+		m, err := decode.(CrudModel).Create(tx, &ctx)
 		if err != nil {
 			c.JSON(http.StatusUnprocessableEntity, gin.H{"error": err.Error()})
 			return
@@ -173,7 +177,9 @@ func (a Application) AppendUpdateEndpoint(prefix string, entity CrudModel, middl
 			return
 		}
 
-		m, err := decode.(CrudModel).Update(tx, c.Param("id"), c)
+		ctx := context.WithoutCancel(c)
+
+		m, err := decode.(CrudModel).Update(tx, c.Param("id"), &ctx)
 		if err != nil {
 			c.JSON(http.StatusUnprocessableEntity, gin.H{"error": err.Error()})
 			return
@@ -195,7 +201,9 @@ func (a Application) AppendDeleteEndpoint(prefix string, entity CrudModel, middl
 			return
 		}
 
-		if entity.Delete(tx, c.Param("id"), c) {
+		ctx := context.WithoutCancel(c)
+
+		if entity.Delete(tx, c.Param("id"), &ctx) {
 			c.JSON(http.StatusOK, gin.H{"message": "ok"})
 			return
 		}
@@ -216,7 +224,9 @@ func (a Application) AppendGetEndpoint(prefix string, entity CrudModel, middlewa
 			return
 		}
 
-		model, err := entity.Get(tx, c.Param("id"), c)
+		ctx := context.WithoutCancel(c)
+
+		model, err := entity.Get(tx, c.Param("id"), &ctx)
 
 		if err != nil {
 			c.JSON(http.StatusNotFound, gin.H{"data": model, "error": err})
