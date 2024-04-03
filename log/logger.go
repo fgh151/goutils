@@ -11,7 +11,6 @@ import (
 	gormlogger "gorm.io/gorm/logger"
 	"gorm.io/gorm/utils"
 	"log"
-	"os"
 	"time"
 )
 
@@ -29,8 +28,6 @@ func NewAppLogger() AppLogger {
 
 	logger := logrus.New()
 	logger.Formatter = &logrus.JSONFormatter{}
-	file, _ := os.OpenFile("app.log", os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0666)
-	logger.SetOutput(file)
 	log.SetOutput(logger.Writer())
 
 	return AppLogger{logger: logger}
