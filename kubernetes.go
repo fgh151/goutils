@@ -2,11 +2,9 @@ package sdk
 
 import (
 	"github.com/gin-gonic/gin"
-	kl "github.com/go-kit/kit/log"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"gorm.io/gorm"
 	"net/http"
-	"os"
 	"sync/atomic"
 )
 
@@ -37,16 +35,6 @@ func Readyz(isReady *atomic.Value) http.HandlerFunc {
 		}
 		w.WriteHeader(http.StatusOK)
 	}
-}
-
-func GetLogger() kl.Logger {
-	var logger kl.Logger
-
-	logger = kl.NewLogfmtLogger(os.Stderr)
-	logger = kl.With(logger, "ts", kl.DefaultTimestampUTC)
-	logger = kl.With(logger, "caller", kl.DefaultCaller)
-
-	return logger
 }
 
 func AppendMetrics(r *gin.Engine) {
