@@ -27,3 +27,13 @@ type User struct {
 	Uuid         uuid.UUID `json:"uuid"`
 	Photo        string    `json:"photo"`
 }
+
+type ApiAccount struct {
+	Id      int `json:"id"`
+	EventId int `json:"event_id"`
+}
+
+type Event struct {
+	Id                  int  `json:"id"`
+	RegisterVisibleUser bool `json:"register_visible_user"`
+}

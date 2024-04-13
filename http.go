@@ -2,6 +2,7 @@ package sdk
 
 import (
 	"encoding/json"
+	"errors"
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
 	"github.com/runetid/go-sdk/models"
@@ -13,6 +14,7 @@ import (
 	"net/http/httputil"
 	"os"
 	"regexp"
+	"strconv"
 	"strings"
 )
 
@@ -231,6 +233,37 @@ func UserMiddleware() gin.HandlerFunc {
 
 		c.Next()
 	}
+}
+
+func EventMiddle(c *gin.Context) {
+	key := c.Request.Header.Get("ApiKey")
+
+	if key != "" {
+		ars, err := RawFetchModel[models.ApiAccountResponse](http.MethodGet, os.Getenv("DNS_ACCOUNT")+"/apiaccount/check/"+key, nil, c.Value("traceId").(string), models.ApiAccountResponse{})
+		if err == nil {
+			event, err := RawFetchModel[models.Event](http.MethodGet, os.Getenv("DNS_EVENT")+"/event/"+strconv.FormatInt(ars.Data.EventId, 10), nil, c.Value("traceId").(string), models.Event{})
+			if err != nil {
+				c.Set("event", event)
+			}
+		}
+	}
+
+	c.Next()
+}
+
+func RawFetchModel[T any](method string, url string, body io.Reader, traceId string, model T) (T, error) {
+	resp, err := RawFetch(method, url, body, traceId)
+	if err == nil {
+		b, _ := io.ReadAll(resp.Body)
+		err = json.Unmarshal(b, &model)
+		if err == nil {
+			return model, nil
+		}
+	}
+
+	err = errors.New("not found")
+
+	return model, err
 }
 
 func RawFetch(method string, url string, body io.Reader, traceId string) (*http.Response, error) {
