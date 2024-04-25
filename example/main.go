@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"crypto/md5"
 	"encoding/hex"
 	"errors"
@@ -35,7 +36,7 @@ func (u *ApiAccount) TableName() string {
 	return "api_account"
 }
 
-func (u *ApiAccount) List(db *gorm.DB, request crud.ListRequest, params ...crud.FilterParams) (interface{}, int64, error) {
+func (u *ApiAccount) List(db *gorm.DB, request crud.ListRequest, ctx *context.Context, params ...crud.FilterParams) (interface{}, int64, error) {
 	var models []ApiAccount
 
 	query := db.Debug().Limit(request.Limit).Offset(request.Offset)
@@ -56,13 +57,13 @@ func (u *ApiAccount) List(db *gorm.DB, request crud.ListRequest, params ...crud.
 	return models, count, err
 }
 
-func (u *ApiAccount) Create(db *gorm.DB) (interface{}, error) {
+func (u *ApiAccount) Create(db *gorm.DB, ctx *context.Context) (interface{}, error) {
 
 	err := db.Debug().Create(&u).Error
 	return u, err
 }
 
-func (u *ApiAccount) Update(db *gorm.DB, key string) (interface{}, error) {
+func (u *ApiAccount) Update(db *gorm.DB, key string, ctx *context.Context) (interface{}, error) {
 
 	err := db.Debug().Save(&u).Error
 	return u, err
@@ -73,11 +74,11 @@ func (u *ApiAccount) DecodeCreate(c *gin.Context) (interface{}, error) {
 	return u, err
 }
 
-func (u *ApiAccount) Delete(db *gorm.DB, key string) bool {
+func (u *ApiAccount) Delete(db *gorm.DB, key string, ctx *context.Context) bool {
 	return db.Debug().Delete(&ApiAccount{}, key).RowsAffected > 0
 }
 
-func (u *ApiAccount) Get(db *gorm.DB, key string) (interface{}, error) {
+func (u *ApiAccount) Get(db *gorm.DB, key string, ctx *context.Context) (interface{}, error) {
 	var model ApiAccount
 	tx := db.Debug().Where("id = ?", key).First(&model)
 	err := tx.Error
@@ -117,7 +118,7 @@ func (u *AccountDomain) TableName() string {
 	return "api_account_domain"
 }
 
-func (u *AccountDomain) List(db *gorm.DB, request crud.ListRequest, params ...crud.FilterParams) (interface{}, int64, error) {
+func (u *AccountDomain) List(db *gorm.DB, request crud.ListRequest, ctx *context.Context, params ...crud.FilterParams) (interface{}, int64, error) {
 	var models []ApiAccount
 
 	query := db.Debug().Limit(request.Limit).Offset(request.Offset)
@@ -142,12 +143,12 @@ func (u *AccountDomain) GetFilterParams(c *gin.Context) []crud.FilterParams {
 	return p
 }
 
-func (u *AccountDomain) Create(db *gorm.DB) (interface{}, error) {
+func (u *AccountDomain) Create(db *gorm.DB, ctx *context.Context) (interface{}, error) {
 	err := db.Debug().Create(&u).Error
 	return u, err
 }
 
-func (u *AccountDomain) Update(db *gorm.DB, key string) (interface{}, error) {
+func (u *AccountDomain) Update(db *gorm.DB, key string, ctx *context.Context) (interface{}, error) {
 	err := db.Debug().Save(&u).Error
 	return u, err
 }
@@ -158,11 +159,11 @@ func (u *AccountDomain) DecodeCreate(c *gin.Context) (interface{}, error) {
 	return u, err
 }
 
-func (u *AccountDomain) Delete(db *gorm.DB, key string) bool {
+func (u *AccountDomain) Delete(db *gorm.DB, key string, ctx *context.Context) bool {
 	return db.Debug().Delete(&AccountDomain{}, key).RowsAffected > 0
 }
 
-func (u *AccountDomain) Get(db *gorm.DB, key string) (interface{}, error) {
+func (u *AccountDomain) Get(db *gorm.DB, key string, ctx *context.Context) (interface{}, error) {
 	var model AccountDomain
 	tx := db.Debug().Where("id = ?", key).First(&model)
 	err := tx.Error
