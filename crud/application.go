@@ -13,7 +13,6 @@ import (
 	"github.com/rgglez/gormcache"
 	"github.com/runetid/go-sdk"
 	"github.com/runetid/go-sdk/log"
-
 	//"github.com/runetid/go-sdk/log"
 	"github.com/swaggo/files"
 	"github.com/swaggo/gin-swagger"
@@ -51,6 +50,7 @@ func (a Application) Run() {
 	})
 
 	done := make(chan bool)
+	go a.runInternalServer()
 	go a.Router.Run(os.Getenv("HTTP_ADDR"))
 	isReady.Store(true)
 	<-done
