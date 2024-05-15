@@ -269,15 +269,22 @@ func NewCrudApplicationWithConfig(config ApplicationConfig) (*Application, error
 
 	db, err := gorm.Open(postgres.Open(dsn), &gorm.Config{Logger: log.NewGormLogger(&logger)})
 
-	mdb := memcache.New(os.Getenv("CACHE_SRV"))
-	cache := gormcache.NewGormCache("my_cache", gormcache.NewMemcacheClient(mdb), gormcache.CacheConfig{
-		TTL:    600 * time.Second,
-		Prefix: "cache:",
-	})
+	if err != nil {
+		panic("failed to connect database: " + err.Error())
+	}
 
-	err = db.Use(cache)
-	if err == nil {
-		db.Session(&gorm.Session{Context: context.WithValue(context.Background(), gormcache.UseCacheKey, true)})
+	cacheSrv, hasCache := os.LookupEnv("CACHE_SRV")
+	if hasCache {
+		mdb := memcache.New(cacheSrv)
+		cache := gormcache.NewGormCache("my_cache", gormcache.NewMemcacheClient(mdb), gormcache.CacheConfig{
+			TTL:    600 * time.Second,
+			Prefix: "cache:",
+		})
+
+		err = db.Use(cache)
+		if err == nil {
+			db.Session(&gorm.Session{Context: context.WithValue(context.Background(), gormcache.UseCacheKey, true)})
+		}
 	}
 
 	if config.DbMigrationsPath != "" {
