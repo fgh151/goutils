@@ -62,7 +62,7 @@ type CrudModel interface {
 	Create(db *gorm.DB, ctx *context.Context) (interface{}, error)
 	Update(db *gorm.DB, key string, ctx *context.Context) (interface{}, error)
 	DecodeCreate(c *gin.Context) (interface{}, error)
-	Delete(db *gorm.DB, key string, ctx *context.Context) bool
+	Delete(db *gorm.DB, key string, ctx *context.Context) (bool, error)
 	Get(db *gorm.DB, key string, ctx *context.Context) (interface{}, error)
 }
 
@@ -203,12 +203,13 @@ func (a Application) AppendDeleteEndpoint(prefix string, entity CrudModel, middl
 
 		ctx := context.WithoutCancel(c)
 
-		if entity.Delete(tx, c.Param("id"), &ctx) {
-			c.JSON(http.StatusOK, gin.H{"message": "ok"})
+		del, err := entity.Get(tx, c.Param("id"), &ctx)
+		if err != nil && del == false {
+			c.JSON(http.StatusNotFound, gin.H{"message": "Удаление невозможно " + err.Error()})
 			return
 		}
 
-		c.JSON(http.StatusConflict, gin.H{"message": "cant delete"})
+		c.JSON(http.StatusOK, gin.H{"message": "ok"})
 		return
 	})
 }
