@@ -203,8 +203,15 @@ func (a Application) AppendDeleteEndpoint(prefix string, entity CrudModel, middl
 
 		ctx := context.WithoutCancel(c)
 
-		del, err := entity.Get(tx, c.Param("id"), &ctx)
-		if err != nil && del == false {
+		entity, err := entity.Get(tx, c.Param("id"), &ctx)
+		if err != nil {
+			c.JSON(http.StatusNotFound, gin.H{"message": "Удаление невозможно " + err.Error()})
+			return
+		}
+
+		del, err := entity.(CrudModel).Delete(a.Db, c.Param("id"), &ctx)
+
+		if !del {
 			c.JSON(http.StatusNotFound, gin.H{"message": "Удаление невозможно " + err.Error()})
 			return
 		}
