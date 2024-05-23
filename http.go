@@ -296,8 +296,12 @@ func FetchInternal(url string, traceId string) (interface{}, error) {
 	return string(b), nil
 }
 
+type ErrorMessage struct {
+	Message string `json:"message" example:"Модель не найдена"`
+}
+
 func ErrorHandler(c *gin.Context, code int, text string) {
-	c.JSON(code, gin.H{"message": text})
+	c.JSON(code, ErrorMessage{Message: text})
 	c.Writer.WriteHeaderNow()
 	c.Abort()
 	return
