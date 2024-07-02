@@ -281,8 +281,10 @@ func NewCrudApplicationWithConfig(config ApplicationConfig) (*Application, error
 
 	isTesting := os.Getenv("ENVIRONMENT") == "test"
 
-	if err != nil && !isTesting {
-		panic("failed to connect database: " + err.Error())
+	if err != nil {
+		if !isTesting {
+			panic("failed to connect database: " + err.Error())
+		}
 	}
 
 	cacheSrv, hasCache := os.LookupEnv("CACHE_SRV")
