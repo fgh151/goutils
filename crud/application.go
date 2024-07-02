@@ -279,7 +279,9 @@ func NewCrudApplicationWithConfig(config ApplicationConfig) (*Application, error
 
 	db, err := gorm.Open(postgres.Open(dsn), &gorm.Config{Logger: log.NewGormLogger(&logger)})
 
-	if err != nil {
+	isTesting := os.Getenv("ENVIRONMENT") == "test"
+
+	if err != nil && !isTesting {
 		panic("failed to connect database: " + err.Error())
 	}
 
