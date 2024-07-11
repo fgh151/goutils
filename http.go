@@ -223,7 +223,8 @@ func UserMiddleware() gin.HandlerFunc {
 
 			if token != "" {
 				c.Set("token", token)
-				u, err := FetchInternal(os.Getenv("DNS_USER")+"/user/byToken/"+token, c.Value("traceId").(string))
+
+				u, err := RawFetchModel(http.MethodGet, os.Getenv("DNS_USER")+"/user/byToken/"+token, nil, c.Value("traceId").(string), models.User{})
 
 				if err == nil {
 					c.Set("user", u)
