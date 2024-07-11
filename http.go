@@ -255,10 +255,15 @@ func EventMiddle(c *gin.Context) {
 func RawFetchModel[T any](method string, url string, body io.Reader, traceId string, model T) (T, error) {
 	resp, err := RawFetch(method, url, body, traceId)
 	if err == nil {
+
+		D := struct {
+			Data T `json:"data"`
+		}{}
+
 		b, _ := io.ReadAll(resp.Body)
-		err = json.Unmarshal(b, &model)
+		err = json.Unmarshal(b, &D)
 		if err == nil {
-			return model, nil
+			return D.Data, nil
 		}
 	}
 
