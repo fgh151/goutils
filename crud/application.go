@@ -56,6 +56,30 @@ func (a Application) Run() {
 	<-done
 }
 
+type ModelWithList interface {
+	List(db *gorm.DB, request ListRequest, ctx *context.Context, params ...FilterParams) (interface{}, int64, error)
+	GetFilterParams(c *gin.Context) []FilterParams
+}
+
+type ModelWithGet interface {
+	Get(db *gorm.DB, key string, ctx *context.Context) (interface{}, error)
+}
+
+type ModelWithUpdate interface {
+	Update(db *gorm.DB, key string, ctx *context.Context) (interface{}, error)
+	DecodeCreate(c *gin.Context) (interface{}, error)
+}
+
+type ModelWithCreate interface {
+	Create(db *gorm.DB, ctx *context.Context) (interface{}, error)
+	DecodeCreate(c *gin.Context) (interface{}, error)
+}
+
+type ModelWithDelete interface {
+	Delete(db *gorm.DB, key string, ctx *context.Context) (bool, error)
+	Get(db *gorm.DB, key string, ctx *context.Context) (interface{}, error)
+}
+
 type CrudModel interface {
 	List(db *gorm.DB, request ListRequest, ctx *context.Context, params ...FilterParams) (interface{}, int64, error)
 	GetFilterParams(c *gin.Context) []FilterParams
@@ -78,7 +102,7 @@ func (u BaseCrudModel) DecodeCreate(c *gin.Context) (interface{}, error) {
 	return c.Bind(u), nil
 }
 
-func (a Application) AppendListEndpoint(prefix string, entity CrudModel, middlewares ...gin.HandlerFunc) {
+func (a Application) AppendListEndpoint(prefix string, entity ModelWithList, middlewares ...gin.HandlerFunc) {
 	a.Router.GET(prefix+"/list", func(c *gin.Context) {
 
 		tx := a.Db.WithContext(c)
@@ -128,7 +152,7 @@ func (a Application) AppendListEndpoint(prefix string, entity CrudModel, middlew
 	})
 }
 
-func (a Application) AppendCreateEndpoint(prefix string, entity CrudModel, middlewares ...gin.HandlerFunc) {
+func (a Application) AppendCreateEndpoint(prefix string, entity ModelWithCreate, middlewares ...gin.HandlerFunc) {
 	a.Router.POST(prefix, func(c *gin.Context) {
 		tx := a.Db.WithContext(c)
 
@@ -159,7 +183,7 @@ func (a Application) AppendCreateEndpoint(prefix string, entity CrudModel, middl
 	})
 }
 
-func (a Application) AppendUpdateEndpoint(prefix string, entity CrudModel, middlewares ...gin.HandlerFunc) {
+func (a Application) AppendUpdateEndpoint(prefix string, entity ModelWithUpdate, middlewares ...gin.HandlerFunc) {
 	a.Router.PUT(prefix, func(c *gin.Context) {
 		tx := a.Db.WithContext(c)
 
@@ -190,7 +214,7 @@ func (a Application) AppendUpdateEndpoint(prefix string, entity CrudModel, middl
 	})
 }
 
-func (a Application) AppendDeleteEndpoint(prefix string, entity CrudModel, middlewares ...gin.HandlerFunc) {
+func (a Application) AppendDeleteEndpoint(prefix string, entity ModelWithDelete, middlewares ...gin.HandlerFunc) {
 	a.Router.DELETE(prefix, func(c *gin.Context) {
 		tx := a.Db.WithContext(c)
 		for _, middleware := range middlewares {
@@ -209,7 +233,7 @@ func (a Application) AppendDeleteEndpoint(prefix string, entity CrudModel, middl
 			return
 		}
 
-		entity = model.(CrudModel)
+		entity = model.(ModelWithDelete)
 
 		del, err := entity.Delete(a.Db, c.Param("id"), &ctx)
 
@@ -223,7 +247,7 @@ func (a Application) AppendDeleteEndpoint(prefix string, entity CrudModel, middl
 	})
 }
 
-func (a Application) AppendGetEndpoint(prefix string, entity CrudModel, middlewares ...gin.HandlerFunc) {
+func (a Application) AppendGetEndpoint(prefix string, entity ModelWithGet, middlewares ...gin.HandlerFunc) {
 	a.Router.GET(prefix, func(c *gin.Context) {
 		tx := a.Db.WithContext(c)
 		for _, middleware := range middlewares {
