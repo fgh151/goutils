@@ -36,3 +36,7 @@ ENTRYPOINT ["/main", "-v"]
 
 ### Context variables
 - traceId
+
+### Available env variables
+
+- ENVIRONMENT - DEV|PROD

@@ -11,6 +11,7 @@ import (
 	gormlogger "gorm.io/gorm/logger"
 	"gorm.io/gorm/utils"
 	"log"
+	"os"
 	"time"
 )
 
@@ -27,7 +28,9 @@ func GetTraceId(c *gin.Context) string {
 func NewAppLogger() AppLogger {
 
 	logger := logrus.New()
-	logger.Formatter = &logrus.JSONFormatter{}
+	if os.Getenv("ENVIRONMENT") != "DEV" {
+		logger.Formatter = &logrus.JSONFormatter{}
+	}
 	log.SetOutput(logger.Writer())
 
 	return AppLogger{logger: logger}
