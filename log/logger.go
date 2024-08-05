@@ -203,7 +203,6 @@ func (l *GormLogger) Trace(ctx context.Context, begin time.Time, fc func() (stri
 		fields[l.SourceField] = utils.FileWithLineNum()
 	}
 
-	fields["sql"] = sql
 	fields["traceId"] = ctx.Value("traceId")
 
 	if err != nil && !(errors.Is(err, gorm.ErrRecordNotFound) && l.SkipErrRecordNotFound) {
