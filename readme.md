@@ -39,4 +39,4 @@ ENTRYPOINT ["/main", "-v"]
 
 ### Available env variables
 
-- ENVIRONMENT - DEV|PROD
+- ENVIRONMENT - DEV|PROD|TEST

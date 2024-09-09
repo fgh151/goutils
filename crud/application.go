@@ -13,6 +13,8 @@ import (
 	"github.com/rgglez/gormcache"
 	"github.com/runetid/go-sdk"
 	"github.com/runetid/go-sdk/log"
+	"strings"
+
 	//"github.com/runetid/go-sdk/log"
 	"github.com/swaggo/files"
 	"github.com/swaggo/gin-swagger"
@@ -303,7 +305,7 @@ func NewCrudApplicationWithConfig(config ApplicationConfig) (*Application, error
 
 	db, err := gorm.Open(postgres.Open(dsn), &gorm.Config{Logger: log.NewGormLogger(&logger)})
 
-	isTesting := os.Getenv("ENVIRONMENT") == "test"
+	isTesting := strings.ToUpper(os.Getenv("ENVIRONMENT")) == "TEST"
 
 	if err != nil {
 		if !isTesting {
