@@ -35,8 +35,24 @@ ENTRYPOINT ["/main", "-v"]
 ```
 
 ### Context variables
-- traceId
+- ```traceId``` - уникальный идентификатор трассировки в формате UUID ```string```
+- ```databaseConn``` - экземпляр подключения к базе данных ```*gorm.DB```
+- ```event_id``` - идентификатор мероприятия ```int64```
+- ```role``` - роль пользователя ```string```
+- ```token``` - токен пользователя ```string```
+- ```user``` - экземпляр пользователя ```*models.User```
+- ```event``` - экземпляр мероприятия ```*models.Event```
 
 ### Available env variables
 
-- ENVIRONMENT - DEV|PROD|TEST
+- ```ENVIRONMENT``` - Окружение запуска ```DEV|PROD|TEST```
+- ```HTTP_ADDR``` - Порт запуска HTTP
+- ```GH_LOGIN``` - Логин пользователя GitHub для запуска миграций
+- ```DB_HOST``` - IP адрес базы данных
+- ```DB_USER``` - Пользователь базы данных
+- ```DB_PASSWORD``` - Пароль базы данных
+- ```DB_NAME``` - Имя базы данных
+- ```DB_PORT``` - Порт базы данных
+- ```DNS_ACCOUNT``` - DNS адрес микросервиса аккаунтов
+- ```DNS_USERS``` - DNS адрес микросервиса пользователей
+- ```DNS_EVENT``` - DNS адрес микросервиса мероприятий
