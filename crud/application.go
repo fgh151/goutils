@@ -174,7 +174,7 @@ func (a Application) AppendCreateEndpoint(prefix string, entity ModelWithCreate,
 
 		ctx := context.WithoutCancel(c)
 
-		m, err := decode.(CrudModel).Create(tx, &ctx)
+		m, err := decode.(ModelWithCreate).Create(tx, &ctx)
 		if err != nil {
 			c.JSON(http.StatusUnprocessableEntity, gin.H{"error": err.Error()})
 			return
